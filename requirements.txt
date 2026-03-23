@@ -1,0 +1,8 @@
+transformers==4.51.3
+torch
+sentencepiece
+accelerate
+fastapi
+uvicorn[standard]
+pydantic
+requests
