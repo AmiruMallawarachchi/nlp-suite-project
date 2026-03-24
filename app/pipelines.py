@@ -48,4 +48,11 @@ ner = pipeline(
     device=DEVICE,
 )
 
+print("[pipelines] Loading question-answering model...")
+qa = pipeline(
+    "question-answering",
+    model="deepset/roberta-base-squad2",
+    device=DEVICE,
+)
+
 print("[pipelines] All 5 models loaded successfully!")
