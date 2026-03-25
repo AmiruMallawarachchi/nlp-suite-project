@@ -1,3 +1,12 @@
+---
+title: Multi-Task NLP Intelligence Suite
+emoji: 🧠
+colorFrom: blue
+colorTo: purple
+sdk: docker
+pinned: false
+---
+
 # Multi-Task NLP Intelligence Suite
 
 A powerful, unified NLP application featuring a **FastAPI** backend powering 5 Hugging Face pipelines (Summarization, Sentiment, Zero-Shot, NER, QA) and a stunning **Next.js** frontend.
