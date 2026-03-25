@@ -125,7 +125,12 @@ def summarize(req: SummarizationRequest):
 def analyze_sentiment(req: SentimentRequest):
     try:
         sentiment_result = sentiment(req.text)
-        results = list(sentiment_result) if sentiment_result is not None else []
+        
+        # Pull the first element if it's a nested list (common with transformers returning all scores)
+        if isinstance(sentiment_result, list) and len(sentiment_result) > 0 and isinstance(sentiment_result[0], list):
+            results = sentiment_result[0]
+        else:
+            results = list(sentiment_result) if sentiment_result is not None else []
         
         # Filter to only dictionary results
         results = [s for s in results if isinstance(s, dict)]
