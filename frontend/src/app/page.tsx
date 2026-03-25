@@ -10,17 +10,20 @@ import {
   ArrowRight, 
   Terminal, 
   AlertCircle, 
-  Loader2 
+  Loader2,
+  Plus
 } from 'lucide-react';
 
 type Tool = 'summarization' | 'sentiment' | 'zeroshot' | 'ner' | 'qa';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
+const DEFAULT_LABELS = ["Technology", "Space", "Politics", "Sports", "Nature", "Health", "Finance", "AI"];
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tool>('summarization');
   const [text, setText] = useState('');
-  const [labels, setLabels] = useState('');
+  const [labels, setLabels] = useState<string[]>(["Technology", "Space", "Politics"]);
   const [question, setQuestion] = useState('');
   const [context, setContext] = useState('');
   const [loading, setLoading] = useState(false);
@@ -52,7 +55,7 @@ export default function Home() {
         body = { text };
       } else if (activeTab === 'zeroshot') {
         endpoint = '/zero-shot';
-        body = { text, labels: labels.split(',').map(l => l.trim()), multi_label: false };
+        body = { text, labels: labels, multi_label: false };
       } else if (activeTab === 'ner') {
         endpoint = '/ner';
         body = { text };
@@ -75,6 +78,15 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleLabel = (label: string) => {
+    if (labels.includes(label)) {
+      setLabels(labels.filter(l => l !== label));
+    } else {
+      setLabels([...labels, label]);
+    }
+    setResult(null);
   };
 
   return (
@@ -146,14 +158,29 @@ export default function Home() {
           )}
           
           {activeTab === 'zeroshot' && (
-            <div className="p-4 bg-[#0d0d0d] border-t border-[#1a1a1a]">
-              <input 
-                type="text"
-                className="w-full bg-[#111] border border-[#222] rounded-xl p-4 focus:border-[#444] focus:outline-none text-sm placeholder-[#333]"
-                placeholder="Classification Labels (e.g., Tech, Sports...)"
-                value={labels}
-                onChange={(e) => setLabels(e.target.value)}
-              />
+            <div className="p-10 bg-[#0d0d0d] border-t border-[#1a1a1a] space-y-6">
+              <div className="flex items-center justify-between">
+                 <h4 className="text-[10px] font-black uppercase tracking-[4px] text-accent/60">Classification Matrix</h4>
+                 <p className="text-[9px] opacity-20 italic">Select at least 2 labels</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                 {DEFAULT_LABELS.map((label) => (
+                    <button
+                      key={label}
+                      onClick={() => toggleLabel(label)}
+                      className={`px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${
+                        labels.includes(label) 
+                          ? 'bg-accent/20 text-accent border border-accent/30 shadow-[0_0_15px_rgba(204,153,102,0.1)]' 
+                          : 'bg-white/5 text-[#444] border border-[#222] hover:border-[#333]'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                 ))}
+                 <button className="px-4 py-2 rounded-full bg-white/5 border border-dashed border-[#333] text-[#333] hover:text-[#555] cursor-not-allowed">
+                    <Plus size={10} className="inline mr-1" /> Custom
+                 </button>
+              </div>
             </div>
           )}
 
@@ -166,7 +193,7 @@ export default function Home() {
              
              <button 
                 onClick={handleProcess}
-                disabled={loading || (activeTab === 'qa' ? (!question || !context) : !text)}
+                disabled={loading || (activeTab === 'qa' ? (!question || !context) : !text) || (activeTab === 'zeroshot' && labels.length < 2)}
                 className="px-8 py-3.5 rounded-full bg-[#d1d1d1] text-black font-black text-xs uppercase tracking-[2px] hover:bg-white transition-all transform hover:scale-105 active:scale-95 disabled:opacity-20 disabled:grayscale flex items-center gap-3 shadow-xl"
               >
                 {loading ? <Loader2 size={16} className="animate-spin text-black/50" /> : 'Process'}
@@ -215,7 +242,7 @@ export default function Home() {
                     {activeTab === 'sentiment' && (
                       <div className="flex flex-col items-center py-12 space-y-10 group">
                         <div className={`text-[12rem] leading-none transition-all duration-1000 group-hover:scale-110 drop-shadow-[0_0_60px_rgba(204,153,102,0.1)] selection:bg-transparent`}>
-                          {result.label === 'POSITIVE' ? '⚇' : result.label === 'NEGATIVE' ? '◘' : '○'}
+                          {(result.label.toUpperCase() === 'POSITIVE' || result.label.toLowerCase() === 'positive') ? '⚇' : (result.label.toUpperCase() === 'NEGATIVE' || result.label.toLowerCase() === 'negative') ? '◘' : '○'}
                         </div>
                         <div className="text-center space-y-4">
                            <div className="text-5xl font-serif text-white tracking-widest uppercase">{result.label}</div>
@@ -233,7 +260,7 @@ export default function Home() {
                               <span className="capitalize font-serif text-2xl text-white group-hover:text-accent transition-colors">{l.label}</span>
                               <span className="text-[11px] font-black opacity-20 tracking-widest">{(l.score * 100).toFixed(0)}%</span>
                             </div>
-                            <div className="h-[2px] w-full bg-white/5 overflow-hidden rounded-full">
+                            <div className="h-[2px] w-full bg-white/5 overflow-hidden rounded-full font-serif">
                               <div className="h-full bg-accent transition-all duration-1500 ease-out shadow-[0_0_10px_rgba(204,153,102,0.5)]" style={{ width: `${l.score * 100}%` }}></div>
                             </div>
                           </div>
