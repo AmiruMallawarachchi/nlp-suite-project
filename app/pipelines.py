@@ -2,6 +2,7 @@
 # Loads all 5 HuggingFace models once when the server starts.
 
 from transformers import pipeline # type: ignore
+from transformers.pipelines import QuestionAnsweringPipeline # type: ignore
 import torch # type: ignore
 
 # Detect GPu automatically and use it if available, otherwise fall back to CPU.

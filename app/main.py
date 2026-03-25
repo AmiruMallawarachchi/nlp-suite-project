@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware # type: ignore
 from app.schemas import (
     SummarizationRequest, SummarizeResponse,
     SentimentRequest, SentimentResponse,SentimentScore,
-    ZeroShotRequest, ZeroShotResponse, labelScore,
+    ZeroShotRequest, ZeroShotResponse, LabelScore,
     NERRequest, NERResponse, Entity,
     QARequest, QAResponse, AnswerCandidate,
     BatchRequest, BatchResponse,
@@ -53,9 +53,10 @@ def chuck_and_summarize(text: str,max_length: int, min_length: int) -> str:
             min_length=min_length, 
             do_sample=False,
         )
-        summaries.append(summary[0]['summary_text'])
+        if summary and isinstance(summary, list) and isinstance(summary[0], dict):
+            summaries.append(summary[0].get('summary_text', ''))
 
-    if len(summaries) == 1:
+    if len(summaries) > 1:
         combined = " ".join(summaries)
         final = summarizer(
             combined, 
@@ -63,9 +64,10 @@ def chuck_and_summarize(text: str,max_length: int, min_length: int) -> str:
             min_length=min_length, 
             do_sample=False,
         )
-        return final[0]['summary_text']
+        if final and isinstance(final, list) and isinstance(final[0], dict):
+            return final[0].get('summary_text', '')
     
-    return summaries[0]
+    return summaries[0] if summaries else ""
 
 
 def build_annotated_text(text: str, entities: list) -> str:
@@ -78,7 +80,7 @@ def build_annotated_text(text: str, entities: list) -> str:
     sorted_entities = sorted(entities, key=lambda x: x['start'], reverse=True)
     for ent in sorted_entities:
         s, e = ent['start'], ent['end']
-        label = ent['entity_type']
+        label = ent['entity_group']
         text = text[:s] + f"[{text[s:e]}/{label}]" + text[e:]
     return text
 
@@ -122,19 +124,26 @@ def summarize(req: SummarizationRequest):
 @app.post("/sentiment", response_model=SentimentResponse)
 def analyze_sentiment(req: SentimentRequest):
     try:
-        results = sentiment(req.text)[0]  # Get the list of label scores
+        sentiment_result = sentiment(req.text)
+        results = list(sentiment_result) if sentiment_result is not None else []
+        
+        # Filter to only dictionary results
+        results = [s for s in results if isinstance(s, dict)]
+        
+        if not results:
+            results = [{'label': 'NEUTRAL', 'score': 0.0}]
 
         all_scores = [
-            SentimentScore(label=s['label'], score=round(s['score'],4)) 
+            SentimentScore(label=str(s.get('label', '')), score=round(float(s.get('score', 0)),4)) 
             for s in results
         ]
-
-        top = max(results, key=lambda x: x['score'])
+        
+        top = max(results, key=lambda x: x.get('score', 0))
 
         return SentimentResponse(
-            label=top['label'],
-            confidence=round(top['score'],4),
-            low_confidence=top['score'] < SENTIMENT_CONFIDENCE_THRESHOLD,
+            label=str(top.get('label', 'NEUTRAL')),
+            confidence=round(float(top.get('score', 0)),4),
+            low_confidence=float(top.get('score', 0)) < SENTIMENT_CONFIDENCE_THRESHOLD,
             all_scores=all_scores,
         )
     
@@ -145,19 +154,22 @@ def analyze_sentiment(req: SentimentRequest):
 def zero_shot_classification(req: ZeroShotRequest):
     try:
         result = zero_shot(
-            sequences=req.text,
+            req.text,
             candidate_labels=req.labels,
             multi_label=req.multi_label,
         )
 
+        labels = list(result.get('labels', [])) if isinstance(result, dict) else []
+        scores = list(result.get('scores', [])) if isinstance(result, dict) else []
+        
         all_labels = [
-            labelScore(label=l, score=round(s,4)) 
-            for l, s in zip(result['labels'], result['scores'])
+            LabelScore(label=str(l), score=round(float(s),4)) 
+            for l, s in zip(labels, scores)
         ]
 
         return ZeroShotResponse(
-            top_label=result['labels'][0],
-            top_score=round(result['scores'][0],4),
+            top_label=str(labels[0]) if labels else '',
+            top_score=round(float(scores[0]),4) if scores else 0.0,
             all_labels=all_labels,
             multi_label=req.multi_label,
         )
@@ -170,19 +182,21 @@ def zero_shot_classification(req: ZeroShotRequest):
 def named_entity_recognition(req: NERRequest):
     try:
         result = ner(req.text)
-
+        result_list = list(result) if result else []
+        result_list = [e for e in result_list if isinstance(e, dict)]
+        
         entities = [
             Entity(
-                word=e['word'],
-                entity_type=e['entity_group'],
-                score=round(e['score'],4),
-                start=e['start'],
-                end=e['end'],
+                word=str(e.get('word', '')),
+                entity_type=str(e.get('entity_group', '')),
+                score=round(float(e.get('score', 0)), 4),
+                start=int(e.get('start', 0)),
+                end=int(e.get('end', 0)),
             )
-            for e in result
+            for e in result_list
         ]
 
-        annotated = build_annotated_text(req.text, result)
+        annotated = build_annotated_text(req.text, result_list)
 
         return NERResponse(
             entities=entities,
@@ -200,38 +214,46 @@ def question_answering(req: QARequest):
         result = qa(
             question=req.question,
             context=req.context,
-            top_k=req.top_k,
+            top_k=req.top_k
         )
+        
+        candidates_raw = result if isinstance(result, list) else [result]
 
-        candiadates_raw = result if isinstance(result, list) else [result]
-
-        candiadates = [
+        candidates = [
             AnswerCandidate(
-                answer=c['answer'],
-                score=round(c['score'],4),
-                start=c['start'],
-                end=c['end'],
+                answer=str(c.get('answer', '')),
+                score=round(float(c.get('score', 0)), 4),
+                start=int(c.get('start', 0)),
+                end=int(c.get('end', 0)),
             )
-            for c in candiadates_raw
+            for c in candidates_raw if isinstance(c, dict)
         ]
 
-        best = candiadates[0]
+        if not candidates:
+            return QAResponse(
+                answerable=False,
+                answer=None,
+                confidence=0.0,
+                candidates=[],
+            )
+
+        best = candidates[0]
         answerable = best.score >= QA_ANSWERABLE_THRESHOLD
 
         return QAResponse(
             answerable=answerable,
             answer=best.answer if answerable else None,
             confidence=best.score,
-            candiadates=candiadates,
+            candidates=candidates,
         )
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"QA Error: {str(e)}")
     
 @app.post("/batch", response_model=BatchResponse)
 def batch(req: BatchRequest):
     try:
-
-        # Summarization - only if the test is long enough
+        # Summarization - only if the text is long enough
         if len(req.text.split()) > 50:
             summary_text = chuck_and_summarize(
                 req.text,
@@ -250,14 +272,19 @@ def batch(req: BatchRequest):
             summ = None
 
         # Sentiment
-        sr = sentiment(req.text)[0]
-        top_sent = max(sr, key=lambda x: x['score'])
+        sentiment_result = sentiment(req.text)
+        sr = list(sentiment_result) if sentiment_result is not None else []
+        sr = [s for s in sr if isinstance(s, dict)]
+        top_sent = max(sr, key=lambda x: x.get('score', 0)) if sr else {'label': 'NEUTRAL', 'score': 0.0}
+        top_sent_dict = top_sent if isinstance(top_sent, dict) else {'label': 'NEUTRAL', 'score': 0.0}
+        top_label = str(top_sent_dict.get('label', 'NEUTRAL'))
+        top_score = float(top_sent_dict.get('score', 0.0))
         sent = SentimentResponse(
-            label=top_sent['label'],
-            confidence=round(top_sent['score'],4),
-            low_confidence=top_sent['score'] < SENTIMENT_CONFIDENCE_THRESHOLD,
+            label=top_label,
+            confidence=round(top_score, 4),
+            low_confidence=top_score < SENTIMENT_CONFIDENCE_THRESHOLD,
             all_scores=[
-                SentimentScore(label=s['label'], score=round(s['score'],4)) 
+                SentimentScore(label=str(s.get('label', '')), score=round(float(s.get('score', 0)),4)) 
                 for s in sr
             ],
         )
@@ -268,66 +295,77 @@ def batch(req: BatchRequest):
             candidate_labels=req.zs_labels,
             multi_label=False,
         )
+        zr_labels = list(zr.get('labels', [])) if isinstance(zr, dict) else []
+        zr_scores = list(zr.get('scores', [])) if isinstance(zr, dict) else []
         cls = ZeroShotResponse(
-            top_label=zr['labels'][0],
-            top_score=round(zr['scores'][0],4),
+            top_label=str(zr_labels[0]) if zr_labels else '',
+            top_score=round(float(zr_scores[0]),4) if zr_scores else 0.0,
             all_labels=[
-                labelScore(label=l, score=round(s,4)) 
-                for l, s in zip(zr['labels'], zr['scores'])
+                LabelScore(label=str(l), score=round(float(s),4)) 
+                for l, s in zip(zr_labels, zr_scores)
             ],
             multi_label=False,
         )
 
         # NER
         nr = ner(req.text)
+        nr_list = list(nr) if nr else []
+        nr_list = [e for e in nr_list if isinstance(e, dict)]
         ner_res = NERResponse(
             entities=[
                 Entity(
-                    word=e['word'],
-                    entity_type=e['entity_group'],
-                    score=round(e['score'],4),
-                    start=e['start'],
-                    end=e['end'],
+                    word=str(e.get('word', '')),
+                    entity_type=str(e.get('entity_group', '')),
+                    score=round(float(e.get('score', 0)),4),
+                    start=int(e.get('start', 0)),
+                    end=int(e.get('end', 0)),
                 )
-                for e in nr
+                for e in nr_list
             ],
-            entity_count=len(nr),
-            annotated_text=build_annotated_text(req.text,nr),
+            entity_count=len(nr_list),
+            annotated_text=build_annotated_text(req.text, nr_list),
         )
 
         # QA - only if question and context are provided
-        qa_res = None
-        if req.qa_question:
-            ctx = req.qa_context or req.text
-            qr = qa(question=req.qa_question,context=ctx,top_k=1,)
-            cr = qr if isinstance(qr, list) else [qr]
-            best = cr[0]
-            answerable = best['score'] >= QA_ANSWERABLE_THRESHOLD
-            qa_res = QAResponse(
-                answerable=answerable,
-                answer=best['answer'] if answerable else None,
-                confidence=round(best['score'],4),
-                candiadates=[
-                    AnswerCandidate(
-                        answer=c['answer'],
-                        score=round(c['score'],4),
-                        start=c['start'],
-                        end=c['end'],
-                    )
-                    for c in cr
-                ],
+        qa_result = None
+        if req.qa_question and req.qa_context:
+            qa_output = qa(
+                question=req.qa_question,
+                context=req.qa_context,
+                top_k=1
             )
+
+            qa_output_list = qa_output if isinstance(qa_output, list) else [qa_output]
+
+            candidates = [
+                AnswerCandidate(
+                    answer=str(c.get("answer", "")),
+                    score=round(float(c.get("score", 0)), 4),
+                    start=int(c.get("start", 0)),
+                    end=int(c.get("end", 0)),
+                )
+                for c in qa_output_list if isinstance(c, dict)
+            ]
+
+            if candidates:
+                best = candidates[0]
+                qa_result = QAResponse(
+                    answerable=True,
+                    answer=best.answer,
+                    confidence=best.score,
+                    candidates=candidates,
+                )
 
         return BatchResponse(
             input_preview=req.text[:100] + ("..." if len(req.text) > 100 else ""),
             summarization=summ,
             sentiment=sent,
-            zero_shot=cls,
+            classification=cls,
             ner=ner_res,
-            question_answering=qa_res,
+            question_answering=qa_result,
         )
     
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Batch Error: {str(e)}")
     
 
