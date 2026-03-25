@@ -1,67 +1,41 @@
 ---
 title: Multi-Task NLP Intelligence Suite
-emoji: 🧠
-colorFrom: blue
-colorTo: purple
+emoji: 🤖
+colorFrom: yellow
+colorTo: orange
 sdk: docker
 pinned: false
 ---
 
-# Multi-Task NLP Intelligence Suite
+# 🤖 Multi-Task NLP Intelligence Suite
 
-A powerful, unified NLP application featuring a **FastAPI** backend powering 5 Hugging Face pipelines (Summarization, Sentiment, Zero-Shot, NER, QA) and a stunning **Next.js** frontend.
+[![Live Demo](https://img.shields.io/badge/Live-Vercel-black?style=for-the-badge&logo=vercel)](https://nlp-suite-project.vercel.app/)
+[![Backend](https://img.shields.io/badge/API-HuggingFace-yellow?style=for-the-badge&logo=huggingface)](https://huggingface.co/spaces/Ami-Lab/nlp-suite-backend)
+[![Profile](https://img.shields.io/badge/Developer-Ami--Lab-blue?style=for-the-badge&logo=huggingface)](https://huggingface.co/Ami-Lab)
 
-## Architecture
-- **Backend**: FastAPI (Python), utilizing Hugging Face Transformers. 
-- **Frontend**: Next.js (React), designed with modern UI principles.
+A state-of-the-art, unified NLP platform leveraging Transformer models to provide instant intelligence on any text. Designed with a premium, minimalist aesthetic inspired by modern AI interfaces.
 
----
+## ✨ About the Project
+The **Multi-Task NLP Intelligence Suite** is a full-stack solution designed to make powerful machine learning models accessible through a clean, intuitive interface. By combining a high-performance **FastAPI** backend with a responsive **Next.js** frontend, the suite provides real-time analysis for a wide range of linguistic tasks.
 
-## 🚀 Deployment Guide (100% Free)
+## 🛠️ Intelligent Tools
 
-### 1. Backend: Hugging Face Spaces
-Hugging Face Spaces offers free CPU environments perfect for hosting this FastAPI application.
+| Tool | Model Pipeline | Description |
+| :--- | :--- | :--- |
+| **📝 Summarizer** | `facebook/bart-large-cnn` | Condenses long documents into concise, readable summaries. |
+| **😊 Sentiment** | `distilbert-base-uncased-finetuned-sst-2` | Analyzes emotional tone and confidence levels in text. |
+| **🎯 Zero-Shot** | `facebook/bart-large-mnli` | Classifies text into any category without prior training. |
+| **🏷️ Entity Parsing** | `dbmdz/bert-large-cased-finetuned-conll03-english` | Identifies and labels people, places, and organizations. |
+| **❓ Q&A** | `deepset/roberta-base-squad2` | Extracts precise answers from a provided context paragraph. |
 
-**Steps to Deploy:**
-1. Create a free account at [Hugging Face](https://huggingface.co/join).
-2. Go to your Profile -> "New Space".
-3. Name your space (e.g., `nlp-suite-backend`).
-4. Select **Docker** as the SDK and **Blank** as the Docker template.
-5. Set the hardware to the free tier (e.g., CPU Basic - 2 vCPU · 16 GB).
-6. Click "Create Space".
-7. Clone the new Space repository locally and copy all files from this project (including the `Dockerfile`, `app/`, and `requirements.txt`) into it.
-8. Commit and push the files to the Hugging Face Space repository.
-9. Hugging Face will automatically build the Docker image and deploy the API.
+## 🚀 Architecture
+- **Frontend**: Next.js 15 (App Router), Tailwind CSS 4, Framer Motion.
+- **Backend**: FastAPI, Hugging Face Transformers, PyTorch.
+- **Hosting**: Vercel (Front) & Hugging Face Spaces (Back).
 
-> Note: The `Dockerfile` in this repo is already pre-configured for Hugging Face Spaces (exposing port `7860`).
-
-### 2. Frontend: Vercel
-Vercel is the creator of Next.js and provides excellent free hosting (Hobby Tier).
-
-**Steps to Deploy:**
-1. Update your Next.js frontend components to point to the deployed Hugging Face Space URL.
-2. Push your `frontend` code or the entire project to a free GitHub repository.
-3. Log in to [Vercel](https://vercel.com/) with your GitHub account.
-4. Click "Add New..." -> "Project".
-5. Import your GitHub repository.
-6. Set the Framework Preset to **Next.js** and the Root Directory to `frontend`.
-7. Click "Deploy". Vercel will automatically build and host the highly responsive web interface for free.
+## 👩‍💻 Developer
+Developed and maintained by **Ami-Lab**. Check out more AI projects and models on my Hugging Face profile:
+👉 [https://huggingface.co/Ami-Lab](https://huggingface.co/Ami-Lab)
 
 ---
-
-## Local Development
-
-### Run the FastAPI Backend
-```bash
-python -m venv venv
-.\venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-### Run the Next.js Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
+*Powered by open-source intelligence and modern web technologies.*
