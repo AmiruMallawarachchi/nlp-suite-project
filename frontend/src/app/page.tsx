@@ -14,7 +14,8 @@ import {
   Plus,
   Compass,
   Zap,
-  ShieldCheck
+  ShieldCheck,
+  Brain
 } from 'lucide-react';
 
 type Tool = 'summarization' | 'sentiment' | 'zeroshot' | 'ner' | 'qa';
@@ -125,10 +126,12 @@ export default function Home() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-12 animate-slide-up">
+      <div className={`grid grid-cols-1 gap-12 animate-slide-up items-start transition-all duration-500 max-w-7xl mx-auto w-full ${
+        (result || loading || error) ? 'lg:grid-cols-2' : 'lg:max-w-4xl'
+      }`}>
         
         {/* Workspace Input Card */}
-        <div className="relative group bg-[#0a0a0a] border border-[#1a1a1a] rounded-[2.5rem] overflow-hidden shadow-2xl ring-1 ring-white/5 p-1 transition-all hover:ring-white/10">
+        <div className="relative group bg-[#0a0a0a] border border-[#1a1a1a] rounded-[2.5rem] overflow-hidden shadow-2xl ring-1 ring-white/5 p-1 transition-all hover:ring-white/10 w-full">
           {activeTab === 'qa' ? (
             <div className="grid grid-cols-1 gap-px bg-[#1a1a1a]">
               <textarea 
@@ -210,13 +213,12 @@ export default function Home() {
 
         {/* Results Card */}
         {(result || loading || error) && (
-          <div className="animate-fade-in border-t border-[#1a1a1a] pt-20">
-            <div className="space-y-16">
-              <div className="relative flex justify-center">
-                 <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#222] to-transparent"></div>
-                 <div className="relative bg-[#0f0f0f] px-10 flex items-center gap-4 text-accent/60">
-                    <Brain size={20} />
-                    <span className="text-[12px] font-black uppercase tracking-[8px]">Inference Report</span>
+          <div className="animate-fade-in lg:sticky lg:top-8 w-full">
+            <div className="space-y-12 bg-[#0a0a0a] border border-[#1a1a1a] rounded-[2.5rem] p-10 shadow-2xl ring-1 ring-white/5 min-h-[500px] flex flex-col justify-center relative">
+              <div className="absolute top-10 w-full left-0 flex justify-center">
+                 <div className="bg-[#0a0a0a] px-8 flex items-center gap-4 text-accent/60">
+                    <Brain size={16} />
+                    <span className="text-[10px] font-black uppercase tracking-[8px]">Inference Report</span>
                  </div>
               </div>
 
