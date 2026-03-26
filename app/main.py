@@ -137,16 +137,18 @@ def analyze_sentiment(req: SentimentRequest):
         
         if not results:
             results = [{'label': 'NEUTRAL', 'score': 0.0}]
+        
+        print(f"DEBUG: sentiment results={results}")
 
         all_scores = [
-            SentimentScore(label=str(s.get('label', '')), score=round(float(s.get('score', 0)),4)) 
+            SentimentScore(label=str(s.get('label', 'neutral')).upper(), score=round(float(s.get('score', 0)),4)) 
             for s in results
         ]
         
         top = max(results, key=lambda x: x.get('score', 0))
 
         return SentimentResponse(
-            label=str(top.get('label', 'NEUTRAL')),
+            label=str(top.get('label', 'NEUTRAL')).upper(),
             confidence=round(float(top.get('score', 0)),4),
             low_confidence=float(top.get('score', 0)) < SENTIMENT_CONFIDENCE_THRESHOLD,
             all_scores=all_scores,
