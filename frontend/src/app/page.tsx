@@ -41,6 +41,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hoveredEntity, setHoveredEntity] = useState<number | null>(null);
 
   const tools = [
     { id: 'summarization', label: 'Summarize', icon: FileText },
@@ -116,28 +117,32 @@ export default function Home() {
         return (
           <span 
             key={i} 
-            className="group relative inline-block px-3 py-1 mx-2 border-b-[3px] border-[#cc9966]/70 text-white italic bg-[#cc9966]/5 rounded-t-xl transition-all hover:bg-[#cc9966]/10 cursor-help"
+            onMouseEnter={() => setHoveredEntity(i)}
+            onMouseLeave={() => setHoveredEntity(null)}
+            className="relative inline-block px-3 py-1 mx-2 border-b-[3px] border-[#cc9966]/70 text-white italic bg-[#cc9966]/5 rounded-t-xl transition-all duration-300 hover:bg-[#cc9966]/15 hover:border-[#cc9966] cursor-help"
           >
             {entityText}
             <sup className="text-[11px] uppercase font-sans not-italic text-[#cc9966] ml-3 font-black tracking-[4px] opacity-80">{label}</sup>
             
             {/* Thinking Tooltip (The "Cloud") */}
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-6 w-72 p-6 bg-[#111]/90 backdrop-blur-2xl border border-[#cc9966]/20 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 pointer-events-none transition-all duration-300 z-50">
-               <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-[#cc9966]/10 rounded-xl">
-                     <Brain size={16} className="text-[#cc9966]" />
+            {hoveredEntity === i && (
+               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-8 w-72 p-6 bg-[#0a0a0a]/95 backdrop-blur-3xl border border-[#cc9966]/40 rounded-3xl shadow-[0_30px_70px_rgba(0,0,0,0.9)] animate-slide-up z-[9999] pointer-events-none">
+                  <div className="flex items-center gap-3 mb-3">
+                     <div className="p-2 bg-[#cc9966]/10 rounded-xl">
+                        <Brain size={16} className="text-[#cc9966]" />
+                     </div>
+                     <span className="text-[11px] font-black uppercase tracking-[4px] text-[#efefef]">{info.title}</span>
                   </div>
-                  <span className="text-[11px] font-black uppercase tracking-[4px] text-[#efefef]">{info.title}</span>
+                  <p className="text-[12px] leading-[1.6] text-white/50 font-sans not-italic font-medium">{info.description}</p>
+                  
+                  {/* Decorative cloud tail */}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-[10px] border-transparent border-t-[#cc9966]/30"></div>
                </div>
-               <p className="text-[12px] leading-[1.6] text-white/50 font-sans not-italic font-medium">{info.description}</p>
-               
-               {/* Decorative cloud tail */}
-               <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-[10px] border-transparent border-t-[#cc9966]/10"></div>
-            </div>
+            )}
           </span>
         );
       }
-      return <span key={i}>{part}</span>;
+      return <span key={i} className="font-serif italic text-white/40">{part}</span>;
     });
   };
 
@@ -160,7 +165,7 @@ export default function Home() {
       <div className="flex flex-wrap items-center justify-center gap-3 py-2.5 px-2.5 bg-[#0a0a0a] border border-[#222] rounded-3xl max-w-2xl mx-auto shadow-2xl ring-1 ring-white/5">
         {tools.map((ToolItem) => (
           <button
-            key={ToolTool.id}
+            key={ToolItem.id}
             onClick={() => { setActiveTab(ToolItem.id as Tool); setResult(null); setError(null); }}
             className={`flex items-center gap-2.5 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${
               activeTab === ToolItem.id 
@@ -354,7 +359,7 @@ export default function Home() {
                     )}
 
                     {activeTab === 'ner' && (
-                      <div className="font-serif text-[1.8rem] md:text-[2.2rem] leading-[1.8] text-white/80 p-6 italic shadow-2xl relative">
+                      <div className="font-serif text-[1.8rem] md:text-[2.2rem] leading-[2.5] p-6 lg:p-10 relative">
                         {renderAnnotatedText()}
                       </div>
                     )}
