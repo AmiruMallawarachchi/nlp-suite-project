@@ -124,33 +124,54 @@ def summarize(req: SummarizationRequest):
 @app.post("/sentiment", response_model=SentimentResponse)
 def analyze_sentiment(req: SentimentRequest):
     try:
-        sentiment_result = sentiment(req.text)
+        # Standardize call for modern Transformers
+        try:
+            sentiment_output = sentiment(req.text, top_k=None)
+        except:
+            sentiment_output = sentiment(req.text)
         
-        # Pull the first element if it's a nested list (common with transformers returning all scores)
-        if isinstance(sentiment_result, list) and len(sentiment_result) > 0 and isinstance(sentiment_result[0], list):
-            results = sentiment_result[0]
+        # Pull first element if it's a batch of one
+        if isinstance(sentiment_output, list) and len(sentiment_output) > 0 and isinstance(sentiment_output[0], list):
+            results = sentiment_output[0]
         else:
-            results = list(sentiment_result) if sentiment_result is not None else []
+            results = list(sentiment_output) if isinstance(sentiment_output, (list, tuple)) else [sentiment_output]
         
-        # Filter to only dictionary results
-        results = [s for s in results if isinstance(s, dict)]
+        # RoBERTa Label Mapping (cardiffnlp/twitter-roberta-base-sentiment-latest)
+        label_mapping = {
+            "LABEL_0": "NEGATIVE", "negative": "NEGATIVE",
+            "LABEL_1": "NEUTRAL",  "neutral": "NEUTRAL",
+            "LABEL_2": "POSITIVE", "positive": "POSITIVE"
+        }
         
-        if not results:
-            results = [{'label': 'NEUTRAL', 'score': 0.0}]
+        # Clean results and map labels
+        processed_results = []
+        for s in results:
+            if isinstance(s, dict):
+                raw_label = str(s.get('label', 'NEUTRAL'))
+                mapped_label = label_mapping.get(raw_label, raw_label.upper())
+                processed_results.append({
+                    'label': mapped_label,
+                    'score': float(s.get('score', 0))
+                })
         
-        print(f"DEBUG: sentiment results={results}")
+        if not processed_results:
+            processed_results = [{'label': 'NEUTRAL', 'score': 0.0}]
 
+        # Map to response schema
         all_scores = [
-            SentimentScore(label=str(s.get('label', 'neutral')).upper(), score=round(float(s.get('score', 0)),4)) 
-            for s in results
+            SentimentScore(label=s['label'], score=round(s['score'], 4)) 
+            for s in processed_results
         ]
         
-        top = max(results, key=lambda x: x.get('score', 0))
+        # Find top result
+        top = max(processed_results, key=lambda x: x['score'])
+        top_label = top['label']
+        top_score = round(top['score'], 4)
 
         return SentimentResponse(
-            label=str(top.get('label', 'NEUTRAL')).upper(),
-            confidence=round(float(top.get('score', 0)),4),
-            low_confidence=float(top.get('score', 0)) < SENTIMENT_CONFIDENCE_THRESHOLD,
+            label=top_label,
+            confidence=top_score,
+            low_confidence=top_score < SENTIMENT_CONFIDENCE_THRESHOLD,
             all_scores=all_scores,
         )
     
