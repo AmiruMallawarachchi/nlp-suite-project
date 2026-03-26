@@ -2,7 +2,7 @@
 title: Multi-Task NLP Intelligence Suite
 emoji: 🤖
 colorFrom: yellow
-colorTo: orange
+colorTo: red
 sdk: docker
 pinned: false
 ---
