@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   FileText, 
   Sparkles, 
@@ -11,12 +11,15 @@ import {
   Terminal, 
   AlertCircle, 
   Loader2,
-  Plus,
-  Compass,
-  Zap,
-  ShieldCheck,
   Brain,
-  Info
+  Github,
+  LayoutGrid,
+  Command,
+  Code2,
+  ExternalLink,
+  ChevronRight,
+  Globe,
+  Zap
 } from 'lucide-react';
 
 type Tool = 'summarization' | 'sentiment' | 'zeroshot' | 'ner' | 'qa';
@@ -25,17 +28,17 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 const DEFAULT_LABELS = ["Technology", "Space", "Politics", "Sports", "Nature", "Health", "Finance", "AI"];
 
-const ENTITY_INFO: Record<string, { title: string; description: string }> = {
-  PER: { title: "Human Identity", description: "Recognized as a unique individual, celebrity, or historical figure by the neural network." },
-  ORG: { title: "Structural Entity", description: "Identified as a corporate body, institution, non-profit, or government agency." },
-  LOC: { title: "Geographic Anchor", description: "Point of interest representing a city, country, state, or natural landmass." },
-  MISC: { title: "General Identifier", description: "General entity including nationalities, religious groups, events, or product titles." },
+const ENTITY_INFO: Record<string, { title: string; color: string; description: string }> = {
+  PER: { title: "Person", color: "text-syntax-blue", description: "Human identity or fictional character." },
+  ORG: { title: "Organization", color: "text-syntax-purple", description: "Companies, agencies, and institutions." },
+  LOC: { title: "Location", color: "text-syntax-orange", description: "Geographic points, countries, and cities." },
+  MISC: { title: "Miscellaneous", color: "text-syntax-red", description: "Events, nationalities, or product titles." },
 };
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tool>('summarization');
   const [text, setText] = useState('');
-  const [labels, setLabels] = useState<string[]>(["Technology", "Space", "Politics"]);
+  const [labels, setLabels] = useState<string[]>(["Technology", "Space", "AI"]);
   const [question, setQuestion] = useState('');
   const [context, setContext] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,11 +47,11 @@ export default function Home() {
   const [hoveredEntity, setHoveredEntity] = useState<number | null>(null);
 
   const tools = [
-    { id: 'summarization', label: 'Summarize', icon: FileText },
-    { id: 'sentiment', label: 'Sentiment', icon: Sparkles },
-    { id: 'zeroshot', label: 'Zero-Shot', icon: Target },
-    { id: 'ner', label: 'Entity Parsing', icon: UserSearch },
-    { id: 'qa', label: 'Q&A', icon: HelpCircle },
+    { id: 'summarization', label: 'Summarize', icon: FileText, desc: 'Condense long-form text into concise intelligence.' },
+    { id: 'sentiment', label: 'Sentiment', icon: Sparkles, desc: 'Detect emotional resonance and polarity in text.' },
+    { id: 'zeroshot', label: 'Zero-Shot', icon: Target, desc: 'Classify text into any category without training.' },
+    { id: 'ner', label: 'NER Parsing', icon: UserSearch, desc: 'Extract entities like names, organizations, and places.' },
+    { id: 'qa', label: 'Context Q&A', icon: HelpCircle, desc: 'Get direct answers from your provided documents.' },
   ];
 
   const handleProcess = async () => {
@@ -99,313 +102,388 @@ export default function Home() {
     } else {
       setLabels([...labels, label]);
     }
-    setResult(null);
   };
 
-  // Helper to render NER with smart tooltips
   const renderAnnotatedText = () => {
     if (!result || !result.annotated_text) return null;
-    
     const parts = result.annotated_text.split(/(\[.*?\/.*?\])/g);
     
     return parts.map((part: string, i: number) => {
       const match = part.match(/\[(.*?)\/(.*?)\]/);
       if (match) {
         const [_, entityText, label] = match;
-        const info = ENTITY_INFO[label] || { title: label, description: "Unclassified metadata entity." };
-        
+        const info = ENTITY_INFO[label] || { title: label, color: "text-brand-accent", description: "Entity identifier." };
         return (
           <span 
             key={i} 
-            onMouseEnter={() => setHoveredEntity(i)}
-            onMouseLeave={() => setHoveredEntity(null)}
-            className="relative inline-block px-3 py-1 mx-2 border-b-[3px] border-[#cc9966]/70 text-white italic bg-[#cc9966]/5 rounded-t-xl transition-all duration-300 hover:bg-[#cc9966]/15 hover:border-[#cc9966] cursor-help"
+            className={`cursor-help border-b border-white/20 px-1 font-medium transition-colors hover:bg-white/5 ${info.color}`}
+            title={info.description}
           >
             {entityText}
-            <sup className="text-[11px] uppercase font-sans not-italic text-[#cc9966] ml-3 font-black tracking-[4px] opacity-80">{label}</sup>
-            
-            {/* Thinking Tooltip (The "Cloud") */}
-            {hoveredEntity === i && (
-               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-8 w-72 p-6 bg-[#0a0a0a]/95 backdrop-blur-3xl border border-[#cc9966]/40 rounded-3xl shadow-[0_30px_70px_rgba(0,0,0,0.9)] animate-slide-up z-[9999] pointer-events-none">
-                  <div className="flex items-center gap-3 mb-3">
-                     <div className="p-2 bg-[#cc9966]/10 rounded-xl">
-                        <Brain size={16} className="text-[#cc9966]" />
-                     </div>
-                     <span className="text-[11px] font-black uppercase tracking-[4px] text-[#efefef]">{info.title}</span>
-                  </div>
-                  <p className="text-[12px] leading-[1.6] text-white/50 font-sans not-italic font-medium">{info.description}</p>
-                  
-                  {/* Decorative cloud tail */}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-[10px] border-transparent border-t-[#cc9966]/30"></div>
-               </div>
-            )}
+            <span className="ml-1 text-[10px] font-bold opacity-50">{label}</span>
           </span>
         );
       }
-      return <span key={i} className="font-serif italic text-white/40">{part}</span>;
+      return <span key={i}>{part}</span>;
     });
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-16 px-6 space-y-16 animate-fade-in relative min-h-screen">
+    <div className="min-h-screen bg-brand-bg text-brand-text selection:bg-brand-accent/30 selection:text-white">
       
-      {/* Decorative background element */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[1px] bg-gradient-to-r from-transparent via-[#cc9966]/20 to-transparent"></div>
-
-      <header className="text-center space-y-4">
-        <h2 className="text-5xl md:text-7xl font-serif text-white tracking-tight leading-tight">How can I help you <span className="italic font-light">today</span>?</h2>
-        <div className="flex justify-center items-center gap-4">
-           <div className="h-[1px] w-12 bg-[#cc9966]/30"></div>
-           <p className="text-[11px] font-black uppercase tracking-[8px] text-[#cc9966]/60">Ami-Lab Intelligence Lab</p>
-           <div className="h-[1px] w-12 bg-[#cc9966]/30"></div>
+      {/* Navigation */}
+      <nav className="fixed top-0 z-50 w-full border-b border-brand-border bg-brand-bg/80 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-accent text-black">
+              <Code2 size={18} strokeWidth={2.5} />
+            </div>
+            <span className="text-lg font-bold tracking-tight">NLP<span className="text-brand-accent">Suite</span></span>
+          </div>
+          <div className="hidden items-center gap-8 md:flex">
+            {['Features', 'Docs', 'API', 'Pricing'].map((item) => (
+              <a key={item} href="#" className="text-sm font-medium text-brand-text-muted transition-colors hover:text-white">
+                {item}
+              </a>
+            ))}
+          </div>
+          <div className="flex items-center gap-4">
+            <a href="https://github.com/AmiruMallawarachchi" target="_blank" className="text-brand-text-muted hover:text-white transition-colors">
+              <Github size={20} />
+            </a>
+            <button className="hidden rounded-full bg-brand-accent px-5 py-2 text-xs font-bold text-black transition-all hover:scale-105 active:scale-95 md:block">
+              Get Started
+            </button>
+          </div>
         </div>
-      </header>
+      </nav>
 
-      {/* Modern Tab Selector */}
-      <div className="flex flex-wrap items-center justify-center gap-3 py-2.5 px-2.5 bg-[#0a0a0a] border border-[#222] rounded-3xl max-w-2xl mx-auto shadow-2xl ring-1 ring-white/5">
-        {tools.map((ToolItem) => (
-          <button
-            key={ToolItem.id}
-            onClick={() => { setActiveTab(ToolItem.id as Tool); setResult(null); setError(null); }}
-            className={`flex items-center gap-2.5 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${
-              activeTab === ToolItem.id 
-                ? 'bg-[#1a1a1a] text-[#cc9966] border border-[#cc9966]/20 shadow-[0_10px_30px_rgba(0,0,0,0.5)] ring-1 ring-[#cc9966]/10' 
-                : 'text-[#444] hover:text-[#888] hover:bg-white/5'
-            }`}
-          >
-            <ToolItem.icon size={15} className={activeTab === ToolItem.id ? 'opacity-100' : 'opacity-30'} />
-            {ToolItem.label}
-          </button>
-        ))}
-      </div>
-
-      <div className={`grid grid-cols-1 gap-12 animate-slide-up items-start transition-all duration-500 w-full ${
-        (result || loading || error) ? 'lg:grid-cols-2' : 'lg:max-w-4xl mx-auto'
-      }`}>
+      <main className="mx-auto max-w-7xl px-6 pt-32 pb-24">
         
-        {/* Workspace Input Card */}
-        <div className="relative group bg-[#0a0a0a] border border-[#1a1a1a] rounded-[2.5rem] overflow-hidden shadow-2xl ring-1 ring-white/5 p-1 transition-all hover:ring-white/10 w-full">
-          {activeTab === 'qa' ? (
-            <div className="grid grid-cols-1 gap-px bg-[#1a1a1a]">
-              <textarea 
-                className="w-full bg-[#0d0d0d] border-none p-12 min-h-[220px] focus:outline-none placeholder-[#222] text-xl leading-[1.7] text-white/90"
-                placeholder="Paste the context paragraph here..."
-                value={context}
-                onChange={(e) => setContext(e.target.value)}
-              />
-              <input 
-                type="text"
-                className="w-full bg-[#0d0d0d] border-none p-12 focus:outline-none placeholder-[#222] text-xl text-white/90 border-t border-[#1a1a1a]"
-                placeholder="Ask your question about the context above..."
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-              />
-            </div>
-          ) : (
-            <div className="relative">
-              <textarea 
-                className="w-full bg-[#0d0d0d] border-none p-12 min-h-[420px] focus:outline-none placeholder-[#222] text-2xl leading-[1.8] text-white/95"
-                placeholder="Enter text here to begin neural analysis..."
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-              />
-              <div className="absolute top-6 left-8 flex items-center gap-3 opacity-20 pointer-events-none">
-                <Terminal size={16} />
-                <span className="text-[11px] font-black tracking-widest uppercase">Input Terminal v1.0</span>
-              </div>
-            </div>
-          )}
-          
-          {activeTab === 'zeroshot' && (
-            <div className="p-10 bg-[#0d0d0d] border-t border-[#1a1a1a] space-y-8">
-              <div className="flex items-center justify-between">
-                 <div className="flex items-center gap-3">
-                   <div className="w-2 h-2 rounded-full bg-accent animate-pulse"></div>
-                   <h4 className="text-[11px] font-black uppercase tracking-[5px] text-accent/80">Classifier Matrix Config</h4>
-                 </div>
-                 <p className="text-[10px] opacity-20 italic font-medium tracking-wide">Multi-label support enabled</p>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                 {DEFAULT_LABELS.map((label) => (
-                    <button
-                      key={label}
-                      onClick={() => toggleLabel(label)}
-                      className={`px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
-                        labels.includes(label) 
-                          ? 'bg-accent/20 text-accent border border-accent/40 shadow-[0_0_25px_rgba(204,153,102,0.15)] ring-1 ring-accent/20' 
-                          : 'bg-white/5 text-[#555] border border-[#222] hover:border-[#444] hover:text-[#888]'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                 ))}
-                 <button className="px-5 py-2.5 rounded-2xl bg-white/5 border border-dashed border-[#333] text-[#333] hover:text-[#555] cursor-not-allowed flex items-center gap-2">
-                    <Plus size={12} /> Custom
-                 </button>
-              </div>
-            </div>
-          )}
+        {/* Hero Section */}
+        <section className="relative mb-24 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand-accent/20 bg-brand-accent/5 px-4 py-1.5 mb-6 animate-fade-in">
+             <span className="flex h-2 w-2 rounded-full bg-brand-accent animate-pulse"></span>
+             <span className="text-[10px] font-bold uppercase tracking-widest text-brand-accent">v2.0 Now Available</span>
+          </div>
+          <h1 className="mx-auto mb-6 max-w-4xl text-5xl font-extrabold tracking-tight md:text-7xl lg:text-8xl">
+            Build faster with <span className="text-brand-accent">modern NLP.</span>
+          </h1>
+          <p className="mx-auto mb-10 max-w-2xl text-lg text-brand-text-muted md:text-xl">
+            A complete intelligence toolkit for modern developers. Ship production-ready NLP models faster with unified endpoints and real-time inference.
+          </p>
+          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <button className="flex items-center gap-2 rounded-xl bg-brand-accent px-8 py-4 text-sm font-bold text-black transition-all hover:scale-105">
+              Start Building Free <ArrowRight size={18} />
+            </button>
+            <button className="flex items-center gap-2 rounded-xl border border-brand-border bg-brand-surface px-8 py-4 text-sm font-bold transition-all hover:bg-white/5">
+              View Documentation
+            </button>
+          </div>
+        </section>
 
-          <div className="p-8 bg-[#0a0a0a] border-t border-[#1a1a1a] flex justify-between items-center px-12">
-             <div className="flex gap-4 opacity-20">
-                <Zap size={18} className="text-[#cc9966]" />
-                <Compass size={18} />
-                <ShieldCheck size={18} />
-             </div>
-             
-             <button 
-                onClick={handleProcess}
-                disabled={loading || (activeTab === 'qa' ? (!question || !context) : !text) || (activeTab === 'zeroshot' && labels.length < 2)}
-                className="px-12 py-4 rounded-full bg-[#efefef] text-[#000] font-black text-[13px] uppercase tracking-[3px] hover:bg-white transition-all transform hover:scale-105 active:scale-95 disabled:opacity-20 disabled:grayscale flex items-center gap-4 shadow-[0_10px_40px_rgba(255,255,255,0.05)]"
-              >
-                {loading ? <Loader2 size={18} className="animate-spin opacity-50" /> : 'Run Intelligence'}
-                <ArrowRight size={16} className="opacity-40" />
-              </button>
+        {/* CLI Install Block */}
+        <div className="mx-auto mb-32 max-w-lg animate-slide-up">
+          <div className="relative flex items-center justify-between overflow-hidden rounded-2xl border border-brand-border bg-brand-surface px-6 py-4 font-mono text-sm group">
+            <div className="flex items-center gap-3">
+              <span className="text-brand-accent">$</span>
+              <span className="text-white">npm install <span className="text-brand-accent">@nlp-suite/core</span></span>
+            </div>
+            <button className="text-brand-text-muted hover:text-white transition-colors">
+              <Terminal size={16} />
+            </button>
           </div>
         </div>
 
-        {/* Results Card */}
-        {(result || loading || error) && (
-          <div className="animate-fade-in lg:sticky lg:top-8 w-full">
-            <div className="space-y-12 bg-[#0a0a0a] border border-[#1a1a1a] rounded-[2.5rem] p-10 lg:p-14 shadow-2xl ring-1 ring-white/5 min-h-[500px] flex flex-col justify-center relative">
-              <div className="absolute top-10 w-full left-0 flex justify-center">
-                 <div className="bg-[#0a0a0a] px-8 flex items-center gap-4 text-[#cc9966]/60">
-                    <Brain size={16} />
-                    <span className="text-[10px] font-black uppercase tracking-[8px]">Inference Report</span>
-                 </div>
-              </div>
-
-              <div className="space-y-10">
-                {error && (
-                  <div className="flex items-center gap-6 p-10 bg-red-400/5 border border-red-400/10 rounded-[2rem] text-red-400 text-lg italic font-serif shadow-2xl">
-                    <AlertCircle size={28} className="shrink-0 opacity-50" />
-                    <span>Neural system encountered a disruption: {error}</span>
+        {/* Feature Bento Grid */}
+        <section className="mb-32">
+          <div className="mb-12 text-center">
+             <h2 className="text-3xl font-bold tracking-tight md:text-5xl">Everything you need to <span className="text-brand-accent">analyze faster.</span></h2>
+          </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+             {tools.map((tool, idx) => (
+                <button
+                  key={tool.id}
+                  onClick={() => { setActiveTab(tool.id as Tool); setResult(null); setError(null); }}
+                  className={`bento-card text-left flex flex-col justify-between group ${idx === 0 || idx === 3 ? 'md:col-span-1' : ''} ${activeTab === tool.id ? 'ring-2 ring-brand-accent/50 bg-white/[0.03]' : ''}`}
+                >
+                  <div>
+                    <div className={`mb-6 flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 ${activeTab === tool.id ? 'bg-brand-accent text-black' : 'bg-white/5 text-brand-text-muted group-hover:bg-brand-accent/10 group-hover:text-brand-accent'}`}>
+                      <tool.icon size={24} />
+                    </div>
+                    <h3 className="mb-2 text-xl font-bold">{tool.label}</h3>
+                    <p className="text-sm text-brand-text-muted leading-relaxed">
+                      {tool.desc}
+                    </p>
                   </div>
-                )}
-
-                {loading && (
-                  <div className="flex flex-col items-center justify-center py-24 animate-pulse">
-                     <Loader2 size={64} className="animate-spin text-[#cc9966]/10 mb-8" />
-                     <p className="text-[12px] font-black uppercase tracking-[10px] text-[#cc9966]/30 ml-2">Mapping neural vectors...</p>
+                  <div className="mt-8 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-accent opacity-0 group-hover:opacity-100 transition-all">
+                    Try Context <ChevronRight size={14} />
                   </div>
-                )}
+                </button>
+             ))}
+             {/* Integrations Card */}
+             <div className="bento-card md:col-span-2 flex items-center justify-between">
+                <div>
+                   <h3 className="mb-4 text-2xl font-bold">Infinite Integrations</h3>
+                   <p className="max-w-md text-brand-text-muted">
+                      Deploy to AWS, Vercel, or HuggingFace with a single configuration. Our API handles the infrastructure.
+                   </p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/5"><Globe size={24} className="text-syntax-blue" /></div>
+                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/5"><Zap size={24} className="text-brand-accent" /></div>
+                </div>
+             </div>
+          </div>
+        </section>
 
-                {result && !loading && (
-                  <div className="animate-slide-up">
-                    
-                    {activeTab === 'summarization' && (
-                      <div className="font-serif text-[2.4rem] md:text-[3.2rem] leading-[1.3] text-white/95 text-center px-4 italic max-w-4xl mx-auto selection:bg-[#cc9966]/40 underline decoration-[#cc9966]/10 underline-offset-[20px] decoration-double">
-                         "{result.summary}"
+        {/* Workspace Area */}
+        <section id="workspace" className="animate-slide-up scroll-mt-32">
+          <div className="flex flex-col gap-8 lg:grid lg:grid-cols-2">
+             
+             {/* Input Terminal */}
+             <div className="rounded-3xl border border-brand-border bg-brand-surface overflow-hidden shadow-2xl flex flex-col h-[600px]">
+                <div className="border-b border-brand-border bg-black/50 px-6 py-4 flex items-center justify-between">
+                   <div className="flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-white/5">
+                        <Terminal size={12} className="text-brand-text-muted" />
                       </div>
-                    )}
-
-                    {activeTab === 'sentiment' && (
-                      <div className="grid grid-cols-1 items-center gap-12 py-6 max-w-4xl mx-auto rounded-[3rem] group">
-                         {/* Large Icon Column */}
-                         <div className="flex flex-col items-center justify-center space-y-8">
-                            <div className={`text-[12rem] leading-none transition-all duration-1000 group-hover:scale-110 drop-shadow-[0_0_80px_rgba(204,153,102,0.15)] selection:bg-transparent`}>
-                              {(result.label?.toUpperCase() === 'POSITIVE') ? '⚇' : (result.label?.toUpperCase() === 'NEGATIVE') ? '◘' : '○'}
-                            </div>
-                            <div className="text-center">
-                               <h3 className="text-4xl font-serif text-white tracking-widest uppercase mb-2 group-hover:text-[#cc9966] transition-colors">{result.label}</h3>
-                               <div className="h-[2px] w-20 bg-[#cc9966]/40 mx-auto"></div>
-                            </div>
-                         </div>
-                         
-                         {/* Breakdown Column */}
-                         <div className="space-y-8 bg-white/[0.02] p-10 rounded-[2rem] border border-white/5">
-                            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[4px] opacity-40">
-                               <span>Weight Distribution</span>
-                               <span>Accuracy Matrix</span>
-                            </div>
-                            
-                            <div className="space-y-6">
-                               {result.all_scores?.map((s: any, i:number) => (
-                                 <div key={i} className={`space-y-2 group/score transition-opacity ${s.label.toUpperCase() === result.label.toUpperCase() ? 'opacity-100' : 'opacity-30'}`}>
-                                   <div className="flex justify-between text-[11px] font-black uppercase tracking-widest italic">
-                                      <span>{s.label}</span>
-                                      <span>{(s.score * 100).toFixed(1)}%</span>
-                                   </div>
-                                   <div className="h-[3px] w-full bg-[#111] overflow-hidden rounded-full">
-                                      <div 
-                                        className={`h-full transition-all duration-1500 ease-out ${s.label.toUpperCase() === result.label.toUpperCase() ? 'bg-[#cc9966]' : 'bg-white/40'}`} 
-                                        style={{ width: `${s.score * 100}%` }}
-                                      ></div>
-                                   </div>
-                                 </div>
-                               ))}
-                            </div>
-                         </div>
+                      <span className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">app.ts — {activeTab}</span>
+                   </div>
+                   <div className="flex items-center gap-1.5 font-mono text-[10px] text-brand-text-muted/40">
+                      <span>TEXT_INPUT</span>
+                      <ChevronRight size={10} />
+                      <span className="text-brand-accent">NEURAL_VEC</span>
+                   </div>
+                </div>
+                
+                <div className="flex-1 relative">
+                  {activeTab === 'qa' ? (
+                    <div className="flex h-full flex-col divide-y divide-brand-border">
+                      <textarea 
+                        className="flex-1 w-full bg-transparent p-10 focus:outline-none placeholder-brand-text-muted/30 text-lg sm:text-xl resize-none"
+                        placeholder="Paste the documentation or context here..."
+                        value={context}
+                        onChange={(e) => setContext(e.target.value)}
+                      />
+                      <div className="p-10 bg-black/20">
+                        <input 
+                          type="text"
+                          className="w-full bg-transparent focus:outline-none placeholder-brand-text-muted/30 text-lg sm:text-xl font-medium"
+                          placeholder="Ask a question about the context above..."
+                          value={question}
+                          onChange={(e) => setQuestion(e.target.value)}
+                        />
                       </div>
-                    )}
-
-                    {activeTab === 'zeroshot' && (
-                      <div className="grid grid-cols-1 gap-6 max-w-5xl mx-auto py-6">
-                        {result.all_labels?.map((l: any, i: number) => (
-                          <div key={i} className="flex flex-col gap-4 group p-8 rounded-[2rem] bg-white/[0.03] border border-white/5 hover:border-[#cc9966]/30 hover:bg-white/[0.05] transition-all duration-500 shadow-xl overflow-hidden relative">
-                            <div className="flex justify-between items-end relative z-10">
-                              <span className="capitalize font-serif text-[1.8rem] text-white/90 group-hover:text-[#cc9966] transition-colors italic">{l.label}</span>
-                              <div className="text-right">
-                                <span className="text-[12px] font-black text-[#cc9966] tracking-[4px]">{(l.score * 100).toFixed(0)}%</span>
-                                <p className="text-[9px] font-black uppercase opacity-20 tracking-widest mt-1">Relevance</p>
-                              </div>
-                            </div>
-                            <div className="h-[2px] w-full bg-white/5 overflow-hidden rounded-full relative z-10">
-                              <div className="h-full bg-[#cc9966] transition-all duration-2000 ease-out shadow-[0_0_15px_rgba(204,153,102,0.6)]" style={{ width: `${l.score * 100}%` }}></div>
-                            </div>
-                          </div>
+                    </div>
+                  ) : (
+                    <textarea 
+                      className="h-full w-full bg-transparent p-10 focus:outline-none placeholder-brand-text-muted/30 text-xl sm:text-2xl resize-none"
+                      placeholder={`Enter text for ${activeTab} analysis...`}
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                    />
+                  )}
+                  
+                  {activeTab === 'zeroshot' && (
+                    <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-brand-surface to-transparent">
+                      <div className="flex flex-wrap gap-2">
+                        {DEFAULT_LABELS.map(l => (
+                          <button 
+                            key={l}
+                            onClick={() => toggleLabel(l)}
+                            className={`rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all ${labels.includes(l) ? 'bg-brand-accent text-black' : 'bg-white/5 text-brand-text-muted hover:bg-white/10'}`}
+                          >
+                            {l}
+                          </button>
                         ))}
                       </div>
-                    )}
+                    </div>
+                  )}
+                </div>
 
-                    {activeTab === 'ner' && (
-                      <div className="font-serif text-[1.8rem] md:text-[2.2rem] leading-[2.5] p-6 lg:p-10 relative">
-                        {renderAnnotatedText()}
+                <div className="p-8 border-t border-brand-border bg-black/40">
+                   <button 
+                     onClick={handleProcess}
+                     disabled={loading || (activeTab === 'qa' ? (!question || !context) : !text)}
+                     className="w-full flex items-center justify-center gap-3 rounded-xl bg-white px-8 py-5 text-sm font-black text-black transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-20 shadow-[0_10px_40px_rgba(255,255,255,0.1)]"
+                   >
+                     {loading ? <Loader2 size={20} className="animate-spin" /> : <><Sparkles size={18} /> Execute Intelligence</>}
+                   </button>
+                </div>
+             </div>
+
+             {/* Output Display */}
+             <div className="rounded-3xl border border-brand-border bg-brand-surface overflow-hidden shadow-2xl flex flex-col h-[600px] group/output">
+                <div className="border-b border-brand-border bg-black/50 px-6 py-4 flex items-center justify-between">
+                   <div className="flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-brand-accent/10">
+                        <Brain size={12} className="text-brand-accent" />
                       </div>
-                    )}
+                      <span className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Inference Report</span>
+                   </div>
+                   <div className="flex gap-1.5">
+                      <div className="h-2 w-2 rounded-full bg-brand-border"></div>
+                      <div className="h-2 w-2 rounded-full bg-brand-border"></div>
+                      <div className="h-2 w-2 rounded-full bg-brand-border"></div>
+                   </div>
+                </div>
 
-                    {activeTab === 'qa' && (
-                      <div className="text-center space-y-12 py-10 max-w-4xl mx-auto">
-                        {result.answerable ? (
-                          <div className="space-y-12 group">
-                            <div className="flex justify-center flex-col items-center gap-6">
-                               <div className="text-8xl opacity-10 group-hover:scale-110 group-hover:opacity-40 transition-all duration-1000 text-[#cc9966] font-serif tracking-tighter">✥</div>
-                               <div className="h-px w-32 bg-[#cc9966]/20"></div>
-                            </div>
-                            <h4 className="text-[3rem] md:text-[4rem] font-serif text-white leading-[1.15] italic tracking-tight underline decoration-[#cc9966]/20 underline-offset-[16px] decoration-double drop-shadow-2xl">
-                              "{result.answer}"
-                            </h4>
-                            <div className="flex justify-center flex-col items-center gap-6 pt-12">
-                               <div className="px-6 py-2 rounded-full border border-[#cc9966]/20 bg-[#cc9966]/5 text-[11px] font-black text-[#cc9966] uppercase tracking-[6px]">
-                                 Inference Match {(result.confidence * 100).toFixed(0)}%
-                               </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center gap-10 opacity-30 py-16 scale-95 border border-white/5 rounded-full p-20 animate-pulse">
-                             <HelpCircle size={80} className="text-[#444]" />
-                             <p className="text-3xl font-serif italic tracking-wide text-center">No structural patterns found.</p>
+                <div className="flex-1 overflow-y-auto p-10 font-mono text-sm">
+                   {loading ? (
+                     <div className="flex h-full flex-col items-center justify-center space-y-6 animate-pulse">
+                        <div className="h-16 w-16 rounded-full border-4 border-brand-accent/10 border-t-brand-accent animate-spin" />
+                        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-accent">Mapping Neural Vectors</span>
+                     </div>
+                   ) : error ? (
+                     <div className="flex h-full flex-col items-center justify-center space-y-4 text-center">
+                        <AlertCircle size={48} className="text-syntax-red opacity-50" />
+                        <p className="max-w-xs text-brand-text-muted italic">Neural disruption: {error}</p>
+                     </div>
+                   ) : result ? (
+                     <div className="animate-fade-in space-y-8">
+                        {activeTab === 'summarization' && (
+                          <div className="text-xl sm:text-2xl font-medium leading-relaxed text-white">
+                             <span className="text-brand-accent">"</span>{result.summary}<span className="text-brand-accent">"</span>
                           </div>
                         )}
-                      </div>
-                    )}
-                  </div>
-                )}
+
+                        {activeTab === 'sentiment' && (
+                          <div className="space-y-10 py-6">
+                             <div className="text-center">
+                                <span className={`text-6xl font-bold tracking-tighter uppercase ${result.label.toUpperCase() === 'POSITIVE' ? 'text-brand-accent' : 'text-syntax-red'}`}>
+                                  {result.label}
+                                </span>
+                                <p className="mt-2 text-xs font-bold uppercase tracking-widest text-brand-text-muted opacity-40">Classification Result</p>
+                             </div>
+                             <div className="space-y-6">
+                                {result.all_scores?.map((s: any) => (
+                                  <div key={s.label} className="space-y-1.5">
+                                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">
+                                      <span>{s.label}</span>
+                                      <span>{(s.score * 100).toFixed(1)}%</span>
+                                    </div>
+                                    <div className="h-1 w-full bg-brand-border rounded-full overflow-hidden">
+                                      <div 
+                                        className={`h-full transition-all duration-1000 ${s.label.toUpperCase() === result.label.toUpperCase() ? 'bg-brand-accent' : 'bg-white/10'}`}
+                                        style={{ width: `${s.score * 100}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                             </div>
+                          </div>
+                        )}
+
+                        {activeTab === 'zeroshot' && (
+                          <div className="space-y-4">
+                             {result.all_labels?.map((l: any) => (
+                                <div key={l.label} className="flex items-center justify-between group p-3 rounded-lg hover:bg-white/[0.02] border border-transparent hover:border-brand-border transition-all">
+                                   <span className="text-lg font-medium text-brand-text-muted group-hover:text-white capitalize">{l.label}</span>
+                                   <div className="flex items-center gap-4">
+                                      <span className="text-xs font-bold text-brand-accent">{(l.score * 100).toFixed(0)}%</span>
+                                      <div className="w-24 h-1 bg-brand-border rounded-full overflow-hidden">
+                                         <div className="h-full bg-brand-accent" style={{ width: `${l.score * 100}%` }} />
+                                      </div>
+                                   </div>
+                                </div>
+                             ))}
+                          </div>
+                        )}
+
+                        {activeTab === 'ner' && (
+                          <div className="text-lg sm:text-xl leading-loose font-sans text-brand-text-muted">
+                             {renderAnnotatedText()}
+                          </div>
+                        )}
+
+                        {activeTab === 'qa' && (
+                          <div className="text-center py-10 space-y-8">
+                             {result.answerable ? (
+                               <>
+                                 <div className="inline-block px-12 py-6 rounded-2xl border border-brand-accent/20 bg-brand-accent/5">
+                                   <p className="text-2xl sm:text-3xl font-bold text-white leading-tight underline decoration-brand-accent/30 decoration-thickness-2 underline-offset-8">
+                                     {result.answer}
+                                   </p>
+                                 </div>
+                                 <div className="flex flex-col items-center gap-1 opacity-40">
+                                   <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-brand-accent">Confidence Matrix</span>
+                                   <span className="text-xs font-mono font-bold">{(result.confidence * 100).toFixed(2)}%</span>
+                                 </div>
+                               </>
+                             ) : (
+                               <div className="opacity-30">
+                                  <HelpCircle size={64} className="mx-auto mb-4" />
+                                  <p className="italic">No answer patterns detected in the context.</p>
+                               </div>
+                             )}
+                          </div>
+                        )}
+                        
+                        {/* JSON Source Toggle placeholder */}
+                        <div className="pt-10 border-t border-brand-border mt-10 opacity-20 flex items-center gap-2 group-hover/output:opacity-100 transition-opacity">
+                           <LayoutGrid size={14} />
+                           <span className="text-[10px] font-bold uppercase tracking-wider cursor-pointer hover:text-brand-accent">View Raw JSON Response</span>
+                        </div>
+                     </div>
+                   ) : (
+                     <div className="flex h-full flex-col items-center justify-center space-y-4 opacity-10">
+                        <Command size={48} />
+                        <span className="text-[10px] font-bold uppercase tracking-[0.5em]">Waiting for Instance</span>
+                     </div>
+                   )}
+                </div>
+             </div>
+
+          </div>
+        </section>
+
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-brand-border bg-brand-surface py-20">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="flex flex-col items-center justify-between gap-10 md:flex-row">
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <Code2 size={24} className="text-brand-accent" />
+                <span className="text-xl font-bold tracking-tight">NLP Suite</span>
               </div>
+              <p className="max-w-xs text-sm text-brand-text-muted">
+                The next generation of natural language processing tools for modern developers.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-20 sm:grid-cols-3">
+               <div className="space-y-4">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-brand-accent">Resources</h4>
+                  <ul className="space-y-2 text-sm text-brand-text-muted">
+                     <li><a href="#" className="hover:text-white">Documentation</a></li>
+                     <li><a href="#" className="hover:text-white">API Reference</a></li>
+                     <li><a href="#" className="hover:text-white">Frameworks</a></li>
+                  </ul>
+               </div>
+               <div className="space-y-4">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-brand-accent">Connect</h4>
+                  <ul className="space-y-2 text-sm text-brand-text-muted">
+                     <li><a href="https://github.com/AmiruMallawarachchi" className="hover:text-white">GitHub</a></li>
+                     <li><a href="#" className="hover:text-white">Twitter</a></li>
+                     <li><a href="#" className="hover:text-white">Discord</a></li>
+                  </ul>
+               </div>
             </div>
           </div>
-        )}
-      </div>
-
-       <footer className="pt-40 pb-20 text-center space-y-12 max-w-2xl mx-auto">
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-[#222] to-transparent"></div>
-        <div className="flex justify-center gap-14 text-[11px] font-black uppercase tracking-[6px]">
-           <a href="https://huggingface.co/Ami-Lab" target="_blank" className="opacity-30 hover:opacity-100 hover:text-[#cc9966] transition-all cursor-alias">HF Intelligence Matrix</a>
-           <a href="https://github.com/AmiruMallawarachchi" target="_blank" className="opacity-30 hover:opacity-100 hover:text-white transition-all cursor-alias">Development Core</a>
-        </div>
-        <div className="space-y-3">
-           <div className="text-[10px] opacity-10 uppercase tracking-[5px] font-black italic">Advanced Cognitive Architecture v1.2</div>
-           <div className="text-[9px] opacity-10 font-medium tracking-[2px]">Powered by HuggingFace Transformers & Next.js Engine</div>
+          
+          <div className="mt-20 border-t border-brand-border pt-10 flex flex-col items-center justify-between gap-6 md:flex-row">
+             <span className="text-[10px] font-bold uppercase tracking-widest text-brand-text-muted opacity-30">
+                © 2026 NLP SUITE INTELLIGENCE LAB. ALL RIGHTS RESERVED.
+             </span>
+             <div className="flex gap-8 text-[10px] font-bold uppercase tracking-widest text-brand-text-muted opacity-30">
+                <a href="#" className="hover:text-brand-accent">Privacy Policy</a>
+                <a href="#" className="hover:text-brand-accent">Terms of Service</a>
+                <a href="#" className="hover:text-brand-accent">System Status</a>
+             </div>
+          </div>
         </div>
       </footer>
     </div>
