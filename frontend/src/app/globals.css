@@ -46,7 +46,7 @@ h1, h2, h3, h4, .font-serif {
   letter-spacing: -0.02em;
 }
 
-.glass {
+@utility glass {
   background: rgba(10, 10, 10, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
