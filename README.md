@@ -15,6 +15,10 @@ pinned: false
 
 A state-of-the-art, unified NLP platform leveraging Transformer models to provide instant intelligence on any text. Designed with a premium, minimalist aesthetic inspired by modern AI interfaces.
 
+> [!IMPORTANT]
+> **View the full technical documentation here: [DOCUMENTATION.md](./DOCUMENTATION.md)**
+
+
 ## ✨ About the Project
 The **Multi-Task NLP Intelligence Suite** is a full-stack solution designed to make powerful machine learning models accessible through a clean, intuitive interface. By combining a high-performance **FastAPI** backend with a responsive **Next.js** frontend, the suite provides real-time analysis for a wide range of linguistic tasks.
 
