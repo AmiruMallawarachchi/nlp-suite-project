@@ -1,57 +1,57 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
-  FileText, 
-  Sparkles, 
-  Target, 
-  UserSearch, 
-  HelpCircle, 
-  ArrowRight, 
+  FileCode, 
   Terminal, 
-  AlertCircle, 
-  Loader2,
-  Brain,
-  Github,
-  LayoutGrid,
-  Command,
+  Brain, 
+  Command, 
+  ChevronRight, 
+  Github, 
+  ExternalLink, 
+  Search, 
+  Workflow, 
+  Activity, 
+  Cpu,
+  Layers,
+  ArrowUpRight,
   Code2,
-  ExternalLink,
-  ChevronRight,
-  Globe,
-  Zap
+  Sparkles,
+  Target,
+  UserSearch,
+  MessageSquare,
+  HelpCircle,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 
 type Tool = 'summarization' | 'sentiment' | 'zeroshot' | 'ner' | 'qa';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
-const DEFAULT_LABELS = ["Technology", "Space", "Politics", "Sports", "Nature", "Health", "Finance", "AI"];
-
-const ENTITY_INFO: Record<string, { title: string; color: string; description: string }> = {
-  PER: { title: "Person", color: "text-syntax-blue", description: "Human identity or fictional character." },
-  ORG: { title: "Organization", color: "text-syntax-purple", description: "Companies, agencies, and institutions." },
-  LOC: { title: "Location", color: "text-syntax-orange", description: "Geographic points, countries, and cities." },
-  MISC: { title: "Miscellaneous", color: "text-syntax-red", description: "Events, nationalities, or product titles." },
+const ENTITY_INFO: Record<string, { title: string; color: string }> = {
+  PER: { title: "Person", color: "text-[#61afef]" }, // Blue
+  ORG: { title: "Organization", color: "text-[#c678dd]" }, // Purple
+  LOC: { title: "Location", color: "text-[#d19a66]" }, // Orange
+  MISC: { title: "Misc", color: "text-[#e06c75]" }, // Red
 };
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tool>('summarization');
   const [text, setText] = useState('');
-  const [labels, setLabels] = useState<string[]>(["Technology", "Space", "AI"]);
+  const [labels, setLabels] = useState<string[]>(["Technology", "Finance", "AI"]);
   const [question, setQuestion] = useState('');
   const [context, setContext] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [hoveredEntity, setHoveredEntity] = useState<number | null>(null);
 
   const tools = [
-    { id: 'summarization', label: 'Summarize', icon: FileText, desc: 'Condense long-form text into concise intelligence.' },
-    { id: 'sentiment', label: 'Sentiment', icon: Sparkles, desc: 'Detect emotional resonance and polarity in text.' },
-    { id: 'zeroshot', label: 'Zero-Shot', icon: Target, desc: 'Classify text into any category without training.' },
-    { id: 'ner', label: 'NER Parsing', icon: UserSearch, desc: 'Extract entities like names, organizations, and places.' },
-    { id: 'qa', label: 'Context Q&A', icon: HelpCircle, desc: 'Get direct answers from your provided documents.' },
+    { id: 'summarization', label: 'summarizer.ts', icon: FileCode, color: 'text-[#98c379]' },
+    { id: 'sentiment', label: 'sentiment.ts', icon: Activity, color: 'text-[#e06c75]' },
+    { id: 'zeroshot', label: 'classifier.ts', icon: Target, color: 'text-[#61afef]' },
+    { id: 'ner', label: 'ner_parser.ts', icon: UserSearch, color: 'text-[#c678dd]' },
+    { id: 'qa', label: 'q_and_a.ts', icon: HelpCircle, color: 'text-[#d19a66]' },
   ];
 
   const handleProcess = async () => {
@@ -71,7 +71,7 @@ export default function Home() {
         body = { text };
       } else if (activeTab === 'zeroshot') {
         endpoint = '/zero-shot';
-        body = { text, labels: labels, multi_label: false };
+        body = { text, labels, multi_label: false };
       } else if (activeTab === 'ner') {
         endpoint = '/ner';
         body = { text };
@@ -86,21 +86,13 @@ export default function Home() {
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
+      if (!res.ok) throw new Error(`Inference Failed: ${res.statusText}`);
       const data = await res.json();
       setResult(data);
     } catch (err: any) {
-      setError(err.message || 'An error occurred');
+      setError(err.message || 'Fatal Exception');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const toggleLabel = (label: string) => {
-    if (labels.includes(label)) {
-      setLabels(labels.filter(l => l !== label));
-    } else {
-      setLabels([...labels, label]);
     }
   };
 
@@ -112,380 +104,360 @@ export default function Home() {
       const match = part.match(/\[(.*?)\/(.*?)\]/);
       if (match) {
         const [_, entityText, label] = match;
-        const info = ENTITY_INFO[label] || { title: label, color: "text-brand-accent", description: "Entity identifier." };
+        const info = ENTITY_INFO[label] || { title: label, color: "text-[#98c379]" };
         return (
-          <span 
-            key={i} 
-            className={`cursor-help border-b border-white/20 px-1 font-medium transition-colors hover:bg-white/5 ${info.color}`}
-            title={info.description}
-          >
+          <span key={i} className={`inline-block mx-0.5 rounded px-1 transition-all ${info.color} bg-white/5 border-b border-white/10 font-bold`}>
             {entityText}
-            <span className="ml-1 text-[10px] font-bold opacity-50">{label}</span>
+            <span className="ml-1 text-[8px] opacity-40 uppercase tracking-tighter">{label}</span>
           </span>
         );
       }
-      return <span key={i}>{part}</span>;
+      return <span key={i} className="text-[#a1a1aa]">{part}</span>;
     });
   };
 
   return (
-    <div className="min-h-screen bg-brand-bg text-brand-text selection:bg-brand-accent/30 selection:text-white">
+    <div className="flex h-screen bg-[#0a0a0a] text-[#a1a1aa] font-mono overflow-hidden">
       
-      {/* Navigation */}
-      <nav className="fixed top-0 z-50 w-full border-b border-brand-border bg-brand-bg/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+      {/* --- SIDEBAR --- */}
+      <aside className="w-64 flex-shrink-0 border-r border-[#1a1a1a] bg-[#0a0a0a] flex flex-col">
+        {/* Branding */}
+        <div className="h-14 flex items-center px-6 border-b border-[#1a1a1a]">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-accent text-black">
-              <Code2 size={18} strokeWidth={2.5} />
+            <div className="w-5 h-5 rounded bg-[#4ade80] flex items-center justify-center">
+              <Code2 size={12} className="text-black" />
             </div>
-            <span className="text-lg font-bold tracking-tight">NLP<span className="text-brand-accent">Suite</span></span>
+            <span className="text-xs font-black tracking-[0.2em] text-white">NLP_SUITE</span>
           </div>
-          <div className="hidden items-center gap-8 md:flex">
-            {['Features', 'Docs', 'API', 'Pricing'].map((item) => (
-              <a key={item} href="#" className="text-sm font-medium text-brand-text-muted transition-colors hover:text-white">
-                {item}
-              </a>
+        </div>
+
+        {/* Explorer */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 flex items-center justify-between text-[10px] font-bold tracking-[0.2em] opacity-30">
+            <span>EXPLORER</span>
+            <Search size={10} />
+          </div>
+          <nav className="px-2 space-y-0.5">
+            <div className="flex items-center gap-2 px-3 py-1 space-x-1 opacity-50 text-[11px] mb-2 cursor-pointer">
+              <ChevronRight size={12} />
+              <Layers size={14} />
+              <span>core / models</span>
+            </div>
+            {tools.map((tool) => (
+              <button
+                key={tool.id}
+                onClick={() => { setActiveTab(tool.id as Tool); setResult(null); setError(null); }}
+                className={`w-full flex items-center gap-2 px-6 py-2 text-[12px] group transition-all hover:bg-white/[0.03] ${activeTab === tool.id ? 'bg-white/[0.05] text-white border-l-2 border-[#4ade80]' : 'border-l-2 border-transparent'}`}
+              >
+                <tool.icon size={14} className={activeTab === tool.id ? tool.color : 'text-gray-600'} />
+                <span>{tool.label}</span>
+              </button>
             ))}
-          </div>
-          <div className="flex items-center gap-4">
-            <a href="https://github.com/AmiruMallawarachchi" target="_blank" className="text-brand-text-muted hover:text-white transition-colors">
-              <Github size={20} />
-            </a>
-            <button className="hidden rounded-full bg-brand-accent px-5 py-2 text-xs font-bold text-black transition-all hover:scale-105 active:scale-95 md:block">
-              Get Started
-            </button>
-          </div>
-        </div>
-      </nav>
+          </nav>
 
-      <main className="mx-auto max-w-7xl px-6 pt-32 pb-24">
-        
-        {/* Hero Section */}
-        <section className="relative mb-24 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-brand-accent/20 bg-brand-accent/5 px-4 py-1.5 mb-6 animate-fade-in">
-             <span className="flex h-2 w-2 rounded-full bg-brand-accent animate-pulse"></span>
-             <span className="text-[10px] font-bold uppercase tracking-widest text-brand-accent">v2.0 Now Available</span>
+          <div className="mt-8 p-4 flex items-center justify-between text-[10px] font-bold tracking-[0.2em] opacity-30">
+            <span>SCRIPTS</span>
+            <Activity size={10} />
           </div>
-          <h1 className="mx-auto mb-6 max-w-4xl text-5xl font-extrabold tracking-tight md:text-7xl lg:text-8xl">
-            Build faster with <span className="text-brand-accent">modern NLP.</span>
-          </h1>
-          <p className="mx-auto mb-10 max-w-2xl text-lg text-brand-text-muted md:text-xl">
-            A complete intelligence toolkit for modern developers. Ship production-ready NLP models faster with unified endpoints and real-time inference.
-          </p>
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <button className="flex items-center gap-2 rounded-xl bg-brand-accent px-8 py-4 text-sm font-bold text-black transition-all hover:scale-105">
-              Start Building Free <ArrowRight size={18} />
-            </button>
-            <button className="flex items-center gap-2 rounded-xl border border-brand-border bg-brand-surface px-8 py-4 text-sm font-bold transition-all hover:bg-white/5">
-              View Documentation
-            </button>
-          </div>
-        </section>
-
-        {/* CLI Install Block */}
-        <div className="mx-auto mb-32 max-w-lg animate-slide-up">
-          <div className="relative flex items-center justify-between overflow-hidden rounded-2xl border border-brand-border bg-brand-surface px-6 py-4 font-mono text-sm group">
-            <div className="flex items-center gap-3">
-              <span className="text-brand-accent">$</span>
-              <span className="text-white">npm install <span className="text-brand-accent">@nlp-suite/core</span></span>
-            </div>
-            <button className="text-brand-text-muted hover:text-white transition-colors">
-              <Terminal size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* Feature Bento Grid */}
-        <section className="mb-32">
-          <div className="mb-12 text-center">
-             <h2 className="text-3xl font-bold tracking-tight md:text-5xl">Everything you need to <span className="text-brand-accent">analyze faster.</span></h2>
-          </div>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-             {tools.map((tool, idx) => (
-                <button
-                  key={tool.id}
-                  onClick={() => { setActiveTab(tool.id as Tool); setResult(null); setError(null); }}
-                  className={`bento-card text-left flex flex-col justify-between group ${idx === 0 || idx === 3 ? 'md:col-span-1' : ''} ${activeTab === tool.id ? 'ring-2 ring-brand-accent/50 bg-white/[0.03]' : ''}`}
-                >
-                  <div>
-                    <div className={`mb-6 flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 ${activeTab === tool.id ? 'bg-brand-accent text-black' : 'bg-white/5 text-brand-text-muted group-hover:bg-brand-accent/10 group-hover:text-brand-accent'}`}>
-                      <tool.icon size={24} />
-                    </div>
-                    <h3 className="mb-2 text-xl font-bold">{tool.label}</h3>
-                    <p className="text-sm text-brand-text-muted leading-relaxed">
-                      {tool.desc}
-                    </p>
-                  </div>
-                  <div className="mt-8 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-accent opacity-0 group-hover:opacity-100 transition-all">
-                    Try Context <ChevronRight size={14} />
-                  </div>
-                </button>
-             ))}
-             {/* Integrations Card */}
-             <div className="bento-card md:col-span-2 flex items-center justify-between">
-                <div>
-                   <h3 className="mb-4 text-2xl font-bold">Infinite Integrations</h3>
-                   <p className="max-w-md text-brand-text-muted">
-                      Deploy to AWS, Vercel, or HuggingFace with a single configuration. Our API handles the infrastructure.
-                   </p>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/5"><Globe size={24} className="text-syntax-blue" /></div>
-                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/5"><Zap size={24} className="text-brand-accent" /></div>
-                </div>
+          <div className="px-5 space-y-3 opacity-40 text-[11px]">
+             <div className="flex items-center gap-2 group cursor-pointer hover:text-white transition-colors">
+                <Workflow size={12} />
+                <span>deploy_pipeline.sh</span>
+             </div>
+             <div className="flex items-center gap-2 group cursor-pointer hover:text-white transition-colors">
+                <Cpu size={12} />
+                <span>monitor_weights.py</span>
              </div>
           </div>
-        </section>
+        </div>
 
-        {/* Workspace Area */}
-        <section id="workspace" className="animate-slide-up scroll-mt-32">
-          <div className="flex flex-col gap-8 lg:grid lg:grid-cols-2">
+        {/* User / Settings Footer */}
+        <div className="p-4 border-t border-[#1a1a1a] space-y-4">
+           <div className="flex items-center gap-4 opacity-50 px-2 justify-between">
+              <a href="https://github.com/AmiruMallawarachchi" target="_blank" className="hover:text-white"><Github size={14} /></a>
+              <a href="#" className="hover:text-white"><ExternalLink size={14} /></a>
+              <a href="#" className="hover:text-white"><Command size={14} /></a>
+           </div>
+           <div className="flex items-center gap-3 px-2">
+              <div className="w-8 h-8 rounded bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                 <img src="https://github.com/AmiruMallawarachchi.png" alt="Profile" className="w-full h-full object-cover grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all" />
+              </div>
+              <div className="flex flex-col">
+                 <span className="text-[10px] font-bold text-white leading-none">Ami-Lab</span>
+                 <span className="text-[8px] opacity-40 uppercase tracking-widest mt-1">Free Tier</span>
+              </div>
+           </div>
+        </div>
+      </aside>
+
+      {/* --- MAIN WORKSPACE --- */}
+      <main className="flex-1 flex flex-col min-w-0 bg-[#0a0a0a]">
+        
+        {/* Tabbar */}
+        <div className="h-10 border-b border-[#1a1a1a] flex items-center px-1 bg-[#0a0a0a]">
+          <div className="flex items-center h-full px-4 border-r border-[#1a1a1a] bg-[#111111] text-white text-[11px] gap-2 border-t border-t-[#4ade80]">
+            <FileCode size={12} className="text-[#98c379]" />
+            <span>{activeTab}.ts</span>
+            <span className="ml-4 opacity-20 hover:opacity-100 cursor-pointer">×</span>
+          </div>
+          <div className="flex items-center h-full px-4 border-r border-[#1a1a1a] opacity-30 text-[11px] gap-2 hover:opacity-80 transition-all cursor-pointer">
+            <Terminal size={12} />
+            <span>Terminal</span>
+          </div>
+          <div className="flex-1"></div>
+          <div className="flex items-center gap-4 px-4 h-full border-l border-[#1a1a1a]">
+             <div className="flex items-center gap-2 text-[10px] font-bold text-[#4ade80]">
+                <div className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse"></div>
+                <span>CONNECTED</span>
+             </div>
+             <button className="text-[10px] font-bold hover:text-white opacity-40 uppercase tracking-widest">v1.2.4</button>
+          </div>
+        </div>
+
+        {/* Editor Body */}
+        <div className="flex-1 flex overflow-hidden">
+          
+          {/* LEFT: Code Input Section */}
+          <div className="flex-1 flex flex-col min-w-0 border-r border-[#1a1a1a]">
+             <div className="h-8 border-b border-[#1a1a1a] flex items-center px-4 bg-[#0d0d0d]">
+                <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-30">Module // Input Segment</span>
+             </div>
              
-             {/* Input Terminal */}
-             <div className="rounded-3xl border border-brand-border bg-brand-surface overflow-hidden shadow-2xl flex flex-col h-[600px]">
-                <div className="border-b border-brand-border bg-black/50 px-6 py-4 flex items-center justify-between">
-                   <div className="flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-white/5">
-                        <Terminal size={12} className="text-brand-text-muted" />
-                      </div>
-                      <span className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">app.ts — {activeTab}</span>
-                   </div>
-                   <div className="flex items-center gap-1.5 font-mono text-[10px] text-brand-text-muted/40">
-                      <span>TEXT_INPUT</span>
-                      <ChevronRight size={10} />
-                      <span className="text-brand-accent">NEURAL_VEC</span>
-                   </div>
+             {/* Textarea + Line numbers area */}
+             <div className="flex-1 flex relative">
+                {/* Line Numbers */}
+                <div className="w-12 border-r border-[#1a1a1a] bg-[#0a0a0a] flex flex-col items-center pt-8 text-[11px] font-bold opacity-10 select-none">
+                   {[...Array(20)].map((_, i) => (
+                     <div key={i} className="h-7 leading-7">{i + 1}</div>
+                   ))}
                 </div>
                 
-                <div className="flex-1 relative">
-                  {activeTab === 'qa' ? (
-                    <div className="flex h-full flex-col divide-y divide-brand-border">
-                      <textarea 
-                        className="flex-1 w-full bg-transparent p-10 focus:outline-none placeholder-brand-text-muted/30 text-lg sm:text-xl resize-none"
-                        placeholder="Paste the documentation or context here..."
-                        value={context}
-                        onChange={(e) => setContext(e.target.value)}
-                      />
-                      <div className="p-10 bg-black/20">
-                        <input 
-                          type="text"
-                          className="w-full bg-transparent focus:outline-none placeholder-brand-text-muted/30 text-lg sm:text-xl font-medium"
-                          placeholder="Ask a question about the context above..."
-                          value={question}
-                          onChange={(e) => setQuestion(e.target.value)}
-                        />
+                {/* Input Area */}
+                <div className="flex-1 flex flex-col">
+                   <div className="flex-1 relative">
+                      {activeTab === 'qa' ? (
+                        <div className="h-full flex flex-col divide-y divide-[#1a1a1a]">
+                            <div className="p-8">
+                               <div className="text-[10px] text-[#c678dd] mb-3 font-bold uppercase tracking-wider">const context = `</div>
+                               <textarea 
+                                  className="w-full bg-transparent resize-none focus:outline-none text-[14px] text-white leading-relaxed placeholder:opacity-10 h-64"
+                                  placeholder="Paste documentation or long-form context here..."
+                                  value={context}
+                                  onChange={(e) => setContext(e.target.value)}
+                               />
+                               <div className="text-[10px] text-[#c678dd] mt-1 font-bold">`;</div>
+                            </div>
+                            <div className="p-8 flex-1">
+                               <div className="text-[10px] text-[#61afef] mb-3 font-bold uppercase tracking-wider">const query = (</div>
+                               <input 
+                                  className="w-full bg-transparent focus:outline-none text-[14px] text-white leading-relaxed placeholder:opacity-10"
+                                  placeholder="Ask any question about the data above..."
+                                  value={question}
+                                  onChange={(e) => setQuestion(e.target.value)}
+                                />
+                                <div className="text-[10px] text-[#61afef] mt-1 font-bold">);</div>
+                            </div>
+                        </div>
+                      ) : (
+                        <div className="p-8 h-full flex flex-col">
+                           <div className="text-[10px] text-[#98c379] mb-3 font-bold uppercase tracking-wider">const inputData = `</div>
+                           <textarea 
+                              className="flex-1 w-full bg-transparent resize-none focus:outline-none text-[14px] text-white leading-relaxed placeholder:opacity-10 font-mono"
+                              placeholder={`// Paste text for ${activeTab} analysis...`}
+                              value={text}
+                              onChange={(e) => setText(e.target.value)}
+                           />
+                           <div className="text-[10px] text-[#98c379] mt-1 font-bold">`;</div>
+                        </div>
+                      )}
+                   </div>
+                   
+                   {/* Bottom Action Bar */}
+                   <div className="p-8 border-t border-[#1a1a1a] bg-[#0d0d0d] flex items-center justify-between">
+                      <div className="flex items-center gap-6">
+                         <div className="flex flex-col">
+                            <span className="text-[8px] font-black tracking-widest opacity-30 uppercase mb-1">Status</span>
+                            <span className="text-[11px] text-[#4ade80] font-bold">AWAITING_TRIGGER</span>
+                         </div>
+                         <div className="flex flex-col">
+                            <span className="text-[8px] font-black tracking-widest opacity-30 uppercase mb-1">Model</span>
+                            <span className="text-[11px] text-white/50 font-bold uppercase tracking-tighter">HuggingFace_v4.2</span>
+                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <textarea 
-                      className="h-full w-full bg-transparent p-10 focus:outline-none placeholder-brand-text-muted/30 text-xl sm:text-2xl resize-none"
-                      placeholder={`Enter text for ${activeTab} analysis...`}
-                      value={text}
-                      onChange={(e) => setText(e.target.value)}
-                    />
-                  )}
-                  
-                  {activeTab === 'zeroshot' && (
-                    <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-brand-surface to-transparent">
-                      <div className="flex flex-wrap gap-2">
-                        {DEFAULT_LABELS.map(l => (
-                          <button 
-                            key={l}
-                            onClick={() => toggleLabel(l)}
-                            className={`rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all ${labels.includes(l) ? 'bg-brand-accent text-black' : 'bg-white/5 text-brand-text-muted hover:bg-white/10'}`}
-                          >
-                            {l}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-8 border-t border-brand-border bg-black/40">
-                   <button 
-                     onClick={handleProcess}
-                     disabled={loading || (activeTab === 'qa' ? (!question || !context) : !text)}
-                     className="w-full flex items-center justify-center gap-3 rounded-xl bg-white px-8 py-5 text-sm font-black text-black transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-20 shadow-[0_10px_40px_rgba(255,255,255,0.1)]"
-                   >
-                     {loading ? <Loader2 size={20} className="animate-spin" /> : <><Sparkles size={18} /> Execute Intelligence</>}
-                   </button>
+                      
+                      <button 
+                         onClick={handleProcess}
+                         disabled={loading || (activeTab === 'qa' ? (!question || !context) : !text)}
+                         className="px-8 py-3 bg-[#4ade80] text-black text-[11px] font-black uppercase tracking-widest rounded transition-all hover:scale-105 active:scale-95 disabled:grayscale disabled:opacity-30 flex items-center gap-3 shadow-[0_0_20px_rgba(74,222,128,0.2)]"
+                      >
+                         {loading ? <Loader2 size={14} className="animate-spin" /> : <><Sparkles size={14} /> Execute Trace</>}
+                      </button>
+                   </div>
                 </div>
              </div>
+          </div>
 
-             {/* Output Display */}
-             <div className="rounded-3xl border border-brand-border bg-brand-surface overflow-hidden shadow-2xl flex flex-col h-[600px] group/output">
-                <div className="border-b border-brand-border bg-black/50 px-6 py-4 flex items-center justify-between">
-                   <div className="flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-brand-accent/10">
-                        <Brain size={12} className="text-brand-accent" />
-                      </div>
-                      <span className="text-xs font-bold uppercase tracking-widest text-brand-text-muted">Inference Report</span>
+          {/* RIGHT: Reports / Inference Output */}
+          <div className="w-[450px] flex-shrink-0 flex flex-col bg-[#080808]">
+             <div className="h-8 border-b border-[#1a1a1a] flex items-center px-4 bg-[#0d0d0d]">
+                <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-30">Module // Inference Report</span>
+             </div>
+
+             <div className="flex-1 overflow-y-auto p-10 font-mono">
+                {loading ? (
+                   <div className="h-full flex flex-col items-center justify-center space-y-4">
+                      <div className="w-12 h-1 block border-t-2 border-[#4ade80] animate-pulse"></div>
+                      <span className="text-[9px] font-black tracking-widest uppercase animate-pulse">Computing Inference...</span>
                    </div>
-                   <div className="flex gap-1.5">
-                      <div className="h-2 w-2 rounded-full bg-brand-border"></div>
-                      <div className="h-2 w-2 rounded-full bg-brand-border"></div>
-                      <div className="h-2 w-2 rounded-full bg-brand-border"></div>
+                ) : error ? (
+                   <div className="p-6 rounded border border-red-900/40 bg-red-900/10 text-red-400 text-[11px] leading-relaxed italic">
+                      [ERROR_TRACE]: {error}
                    </div>
-                </div>
+                ) : result ? (
+                   <div className="space-y-12 animate-fade-in">
+                      {/* Detailed Trace Logic per tool */}
+                      {activeTab === 'summarization' && (
+                        <div className="space-y-6">
+                           <div className="text-[9px] font-black tracking-widest opacity-20 uppercase">Compressed Buffer</div>
+                           <div className="text-[14px] leading-relaxed text-white italic">
+                              <span className="text-[#98c379]">"</span>{result.summary}<span className="text-[#98c379]">"</span>
+                           </div>
+                           <div className="p-4 rounded bg-white/[0.02] border border-white/5 space-y-2">
+                               <div className="flex justify-between text-[9px] tracking-widest opacity-30 uppercase font-black">
+                                  <span>Compression Ratio</span>
+                                  <span className="text-[#4ade80]">{(100 - (result.summary.length / text.length * 100)).toFixed(1)}%</span>
+                               </div>
+                               <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                                  <div className="h-full bg-[#4ade80]" style={{ width: `${100 - (result.summary.length / text.length * 100)}%` }} />
+                               </div>
+                           </div>
+                        </div>
+                      )}
 
-                <div className="flex-1 overflow-y-auto p-10 font-mono text-sm">
-                   {loading ? (
-                     <div className="flex h-full flex-col items-center justify-center space-y-6 animate-pulse">
-                        <div className="h-16 w-16 rounded-full border-4 border-brand-accent/10 border-t-brand-accent animate-spin" />
-                        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-accent">Mapping Neural Vectors</span>
-                     </div>
-                   ) : error ? (
-                     <div className="flex h-full flex-col items-center justify-center space-y-4 text-center">
-                        <AlertCircle size={48} className="text-syntax-red opacity-50" />
-                        <p className="max-w-xs text-brand-text-muted italic">Neural disruption: {error}</p>
-                     </div>
-                   ) : result ? (
-                     <div className="animate-fade-in space-y-8">
-                        {activeTab === 'summarization' && (
-                          <div className="text-xl sm:text-2xl font-medium leading-relaxed text-white">
-                             <span className="text-brand-accent">"</span>{result.summary}<span className="text-brand-accent">"</span>
-                          </div>
-                        )}
-
-                        {activeTab === 'sentiment' && (
-                          <div className="space-y-10 py-6">
-                             <div className="text-center">
-                                <span className={`text-6xl font-bold tracking-tighter uppercase ${result.label.toUpperCase() === 'POSITIVE' ? 'text-brand-accent' : 'text-syntax-red'}`}>
+                      {activeTab === 'sentiment' && (
+                         <div className="space-y-10">
+                            <div className="text-center">
+                               <div className={`text-5xl font-black tracking-tighter uppercase ${result.label.toUpperCase() === 'POSITIVE' ? 'text-[#4ade80]' : 'text-[#e06c75]'}`}>
                                   {result.label}
-                                </span>
-                                <p className="mt-2 text-xs font-bold uppercase tracking-widest text-brand-text-muted opacity-40">Classification Result</p>
-                             </div>
-                             <div className="space-y-6">
+                               </div>
+                               <div className="text-[9px] font-black tracking-widest opacity-30 mt-2 uppercase">Classification Map</div>
+                            </div>
+                            <div className="space-y-6">
                                 {result.all_scores?.map((s: any) => (
-                                  <div key={s.label} className="space-y-1.5">
-                                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">
-                                      <span>{s.label}</span>
-                                      <span>{(s.score * 100).toFixed(1)}%</span>
-                                    </div>
-                                    <div className="h-1 w-full bg-brand-border rounded-full overflow-hidden">
-                                      <div 
-                                        className={`h-full transition-all duration-1000 ${s.label.toUpperCase() === result.label.toUpperCase() ? 'bg-brand-accent' : 'bg-white/10'}`}
-                                        style={{ width: `${s.score * 100}%` }}
-                                      />
-                                    </div>
+                                  <div key={s.label} className="space-y-2">
+                                     <div className="flex justify-between text-[9px] font-bold uppercase tracking-widest text-[#a1a1aa]/50">
+                                        <span>{s.label}</span>
+                                        <span className={s.label.toUpperCase() === result.label.toUpperCase() ? 'text-[#4ade80]' : ''}>{(s.score * 100).toFixed(1)}%</span>
+                                     </div>
+                                     <div className="h-0.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                        <div 
+                                          className={`h-full transition-all duration-1000 ${s.label.toUpperCase() === result.label.toUpperCase() ? 'bg-[#4ade80]' : 'bg-white/10'}`}
+                                          style={{ width: `${s.score * 100}%` }}
+                                        />
+                                     </div>
                                   </div>
                                 ))}
-                             </div>
-                          </div>
-                        )}
+                            </div>
+                         </div>
+                      )}
 
-                        {activeTab === 'zeroshot' && (
-                          <div className="space-y-4">
-                             {result.all_labels?.map((l: any) => (
-                                <div key={l.label} className="flex items-center justify-between group p-3 rounded-lg hover:bg-white/[0.02] border border-transparent hover:border-brand-border transition-all">
-                                   <span className="text-lg font-medium text-brand-text-muted group-hover:text-white capitalize">{l.label}</span>
-                                   <div className="flex items-center gap-4">
-                                      <span className="text-xs font-bold text-brand-accent">{(l.score * 100).toFixed(0)}%</span>
-                                      <div className="w-24 h-1 bg-brand-border rounded-full overflow-hidden">
-                                         <div className="h-full bg-brand-accent" style={{ width: `${l.score * 100}%` }} />
-                                      </div>
-                                   </div>
-                                </div>
-                             ))}
-                          </div>
-                        )}
-
-                        {activeTab === 'ner' && (
-                          <div className="text-lg sm:text-xl leading-loose font-sans text-brand-text-muted">
-                             {renderAnnotatedText()}
-                          </div>
-                        )}
-
-                        {activeTab === 'qa' && (
-                          <div className="text-center py-10 space-y-8">
-                             {result.answerable ? (
-                               <>
-                                 <div className="inline-block px-12 py-6 rounded-2xl border border-brand-accent/20 bg-brand-accent/5">
-                                   <p className="text-2xl sm:text-3xl font-bold text-white leading-tight underline decoration-brand-accent/30 decoration-thickness-2 underline-offset-8">
-                                     {result.answer}
-                                   </p>
+                      {activeTab === 'zeroshot' && (
+                        <div className="space-y-6">
+                           <div className="text-[9px] font-black tracking-widest opacity-20 uppercase">Probability Matrix</div>
+                           <div className="space-y-2">
+                              {result.all_labels?.map((l: any) => (
+                                 <div key={l.label} className="group p-4 rounded bg-white/[0.02] border border-transparent hover:border-white/10 transition-all">
+                                    <div className="flex justify-between items-center mb-2">
+                                       <span className="text-[14px] text-white/50 group-hover:text-white capitalize transition-all">{l.label}</span>
+                                       <span className="text-[11px] font-bold text-[#61afef]">{(l.score * 100).toFixed(0)}%</span>
+                                    </div>
+                                    <div className="h-0.5 bg-white/5 rounded-full overflow-hidden">
+                                       <div className="h-full bg-[#61afef]" style={{ width: `${l.score * 100}%` }} />
+                                    </div>
                                  </div>
-                                 <div className="flex flex-col items-center gap-1 opacity-40">
-                                   <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-brand-accent">Confidence Matrix</span>
-                                   <span className="text-xs font-mono font-bold">{(result.confidence * 100).toFixed(2)}%</span>
-                                 </div>
-                               </>
-                             ) : (
-                               <div className="opacity-30">
-                                  <HelpCircle size={64} className="mx-auto mb-4" />
-                                  <p className="italic">No answer patterns detected in the context.</p>
-                               </div>
-                             )}
-                          </div>
-                        )}
-                        
-                        {/* JSON Source Toggle placeholder */}
-                        <div className="pt-10 border-t border-brand-border mt-10 opacity-20 flex items-center gap-2 group-hover/output:opacity-100 transition-opacity">
-                           <LayoutGrid size={14} />
-                           <span className="text-[10px] font-bold uppercase tracking-wider cursor-pointer hover:text-brand-accent">View Raw JSON Response</span>
+                              ))}
+                           </div>
                         </div>
-                     </div>
-                   ) : (
-                     <div className="flex h-full flex-col items-center justify-center space-y-4 opacity-10">
-                        <Command size={48} />
-                        <span className="text-[10px] font-bold uppercase tracking-[0.5em]">Waiting for Instance</span>
-                     </div>
-                   )}
-                </div>
+                      )}
+
+                      {activeTab === 'ner' && (
+                        <div className="space-y-8">
+                           <div className="text-[9px] font-black tracking-widest opacity-20 uppercase">Token Classification</div>
+                           <div className="text-[14px] leading-[2.2] font-sans">
+                              {renderAnnotatedText()}
+                           </div>
+                           <div className="pt-8 border-t border-white/5 grid grid-cols-2 gap-4">
+                              {Object.entries(ENTITY_INFO).map(([key, info]) => (
+                                 <div key={key} className="flex flex-col gap-1">
+                                    <span className={`text-[10px] font-bold ${info.color}`}>{key}</span>
+                                    <span className="text-[9px] opacity-20 uppercase tracking-widest">{info.title}</span>
+                                 </div>
+                              ))}
+                           </div>
+                        </div>
+                      )}
+
+                      {activeTab === 'qa' && (
+                        <div className="space-y-12 py-10">
+                           <div className="text-center space-y-4">
+                              <div className="text-[9px] font-black tracking-widest opacity-20 uppercase italic">Inference Answer</div>
+                              {result.answerable ? (
+                                <div className="text-2xl font-black text-[#d19a66] tracking-tight leading-tight underline underline-offset-8 decoration-[#d19a66]/20">
+                                   {result.answer}
+                                </div>
+                              ) : (
+                                <div className="opacity-30 italic text-[14px]">[NULL_PTR_EXCEPTION]: Context insufficient.</div>
+                              )}
+                           </div>
+                           {result.answerable && (
+                              <div className="p-6 rounded border border-[#d19a66]/20 bg-[#d19a66]/5 flex flex-col items-center gap-1">
+                                 <span className="text-[9px] font-black tracking-[0.4em] text-[#d19a66]">Confidence</span>
+                                 <span className="text-[14px] font-bold text-white">{(result.confidence * 100).toFixed(2)}%</span>
+                              </div>
+                           )}
+                        </div>
+                      )}
+
+                      {/* Code Sample Generation */}
+                      <div className="pt-10 border-t border-white/5 space-y-4">
+                         <div className="text-[8px] font-black tracking-widest opacity-20 uppercase">CURL EXample</div>
+                         <div className="p-4 rounded bg-black border border-white/5 font-mono text-[11px] text-white/50 group relative hover:text-white transition-all overflow-hidden">
+                            <pre className="overflow-x-auto">
+{`curl -X POST "${API_URL}${activeTab}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"text": "..."}'`}
+                            </pre>
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                               <ArrowUpRight size={12} className="text-[#4ade80]" />
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+                ) : (
+                   <div className="h-full flex flex-col items-center justify-center space-y-10 opacity-10 grayscale">
+                      <Brain size={64} className="animate-glow" />
+                      <div className="text-center space-y-2">
+                        <div className="text-[10px] font-black tracking-[0.5em] uppercase">Neural Engine Idling</div>
+                        <div className="text-[8px] tracking-[0.2em] uppercase">Status: READY_FOR_SIGNAL</div>
+                      </div>
+                   </div>
+                )}
              </div>
 
-          </div>
-        </section>
-
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-brand-border bg-brand-surface py-20">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="flex flex-col items-center justify-between gap-10 md:flex-row">
-            <div>
-              <div className="flex items-center gap-2 mb-6">
-                <Code2 size={24} className="text-brand-accent" />
-                <span className="text-xl font-bold tracking-tight">NLP Suite</span>
-              </div>
-              <p className="max-w-xs text-sm text-brand-text-muted">
-                The next generation of natural language processing tools for modern developers.
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-20 sm:grid-cols-3">
-               <div className="space-y-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-brand-accent">Resources</h4>
-                  <ul className="space-y-2 text-sm text-brand-text-muted">
-                     <li><a href="#" className="hover:text-white">Documentation</a></li>
-                     <li><a href="#" className="hover:text-white">API Reference</a></li>
-                     <li><a href="#" className="hover:text-white">Frameworks</a></li>
-                  </ul>
-               </div>
-               <div className="space-y-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-brand-accent">Connect</h4>
-                  <ul className="space-y-2 text-sm text-brand-text-muted">
-                     <li><a href="https://github.com/AmiruMallawarachchi" className="hover:text-white">GitHub</a></li>
-                     <li><a href="#" className="hover:text-white">Twitter</a></li>
-                     <li><a href="#" className="hover:text-white">Discord</a></li>
-                  </ul>
-               </div>
-            </div>
-          </div>
-          
-          <div className="mt-20 border-t border-brand-border pt-10 flex flex-col items-center justify-between gap-6 md:flex-row">
-             <span className="text-[10px] font-bold uppercase tracking-widest text-brand-text-muted opacity-30">
-                © 2026 NLP SUITE INTELLIGENCE LAB. ALL RIGHTS RESERVED.
-             </span>
-             <div className="flex gap-8 text-[10px] font-bold uppercase tracking-widest text-brand-text-muted opacity-30">
-                <a href="#" className="hover:text-brand-accent">Privacy Policy</a>
-                <a href="#" className="hover:text-brand-accent">Terms of Service</a>
-                <a href="#" className="hover:text-brand-accent">System Status</a>
+             {/* Footer Info */}
+             <div className="h-10 border-t border-[#1a1a1a] bg-[#0d0d0d] flex items-center justify-between px-6 text-[10px] opacity-30 font-bold tracking-widest">
+                <div className="flex gap-4">
+                   <span>UTF-8</span>
+                   <span>TypeScript</span>
+                </div>
+                <div className="flex gap-4">
+                   <span>LN 1, COL 1</span>
+                   <span>SPACES: 2</span>
+                </div>
              </div>
           </div>
         </div>
-      </footer>
+      </main>
     </div>
   );
 }
