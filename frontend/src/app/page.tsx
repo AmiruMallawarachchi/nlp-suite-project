@@ -22,7 +22,9 @@ import {
   MessageSquare,
   HelpCircle,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Menu,
+  X
 } from 'lucide-react';
 
 type Tool = 'summarization' | 'sentiment' | 'zeroshot' | 'ner' | 'qa';
@@ -37,6 +39,7 @@ const ENTITY_INFO: Record<string, { title: string; color: string }> = {
 };
 
 export default function Home() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tool>('summarization');
   const [text, setText] = useState('');
   const [labels, setLabels] = useState<string[]>(["Technology", "Finance", "AI"]);
@@ -120,15 +123,22 @@ export default function Home() {
     <div className="flex h-screen bg-[#0a0a0a] text-[#a1a1aa] font-mono overflow-hidden">
       
       {/* --- SIDEBAR --- */}
-      <aside className="w-64 flex-shrink-0 border-r border-[#1a1a1a] bg-[#0a0a0a] flex flex-col">
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-64 bg-[#0a0a0a] border-r border-[#1a1a1a] transition-transform duration-300 ease-in-out flex flex-col
+        lg:translate-x-0 lg:static lg:flex-shrink-0
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
         {/* Branding */}
-        <div className="h-14 flex items-center px-6 border-b border-[#1a1a1a]">
+        <div className="h-14 flex items-center px-6 border-b border-[#1a1a1a] justify-between">
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded bg-[#4ade80] flex items-center justify-center">
               <Code2 size={12} className="text-black" />
             </div>
             <span className="text-xs font-black tracking-[0.2em] text-white">NLP_SUITE</span>
           </div>
+          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-[#a1a1aa] hover:text-white">
+            <X size={18} />
+          </button>
         </div>
 
         {/* Explorer */}
@@ -146,7 +156,12 @@ export default function Home() {
             {tools.map((tool) => (
               <button
                 key={tool.id}
-                onClick={() => { setActiveTab(tool.id as Tool); setResult(null); setError(null); }}
+                onClick={() => { 
+                  setActiveTab(tool.id as Tool); 
+                  setResult(null); 
+                  setError(null);
+                  setIsSidebarOpen(false); // Close on mobile
+                }}
                 className={`w-full flex items-center gap-2 px-6 py-2 text-[12px] group transition-all hover:bg-white/[0.03] ${activeTab === tool.id ? 'bg-white/[0.05] text-white border-l-2 border-[#4ade80]' : 'border-l-2 border-transparent'}`}
               >
                 <tool.icon size={14} className={activeTab === tool.id ? tool.color : 'text-gray-600'} />
@@ -191,31 +206,38 @@ export default function Home() {
       </aside>
 
       {/* --- MAIN WORKSPACE --- */}
-      <main className="flex-1 flex flex-col min-w-0 bg-[#0a0a0a]">
+      <main className="flex-1 flex flex-col min-w-0 bg-[#0a0a0a] h-full overflow-hidden">
         
-        {/* Tabbar */}
-        <div className="h-10 border-b border-[#1a1a1a] flex items-center px-1 bg-[#0a0a0a]">
+        {/* Mobile Header / Tabbar */}
+        <div className="h-14 lg:h-10 border-b border-[#1a1a1a] flex items-center px-1 bg-[#0a0a0a] sticky top-0 z-10">
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-3 lg:hidden text-[#a1a1aa] hover:text-white mr-1"
+          >
+            <Menu size={20} />
+          </button>
+          
           <div className="flex items-center h-full px-4 border-r border-[#1a1a1a] bg-[#111111] text-white text-[11px] gap-2 border-t border-t-[#4ade80]">
             <FileCode size={12} className="text-[#98c379]" />
-            <span>{activeTab}.ts</span>
-            <span className="ml-4 opacity-20 hover:opacity-100 cursor-pointer">×</span>
+            <span className="truncate max-w-[120px]">{activeTab}.ts</span>
+            <span className="ml-2 lg:ml-4 opacity-20 hover:opacity-100 cursor-pointer">×</span>
           </div>
-          <div className="flex items-center h-full px-4 border-r border-[#1a1a1a] opacity-30 text-[11px] gap-2 hover:opacity-80 transition-all cursor-pointer">
+          <div className="hidden sm:flex items-center h-full px-4 border-r border-[#1a1a1a] opacity-30 text-[11px] gap-2 hover:opacity-80 transition-all cursor-pointer">
             <Terminal size={12} />
             <span>Terminal</span>
           </div>
           <div className="flex-1"></div>
-          <div className="flex items-center gap-4 px-4 h-full border-l border-[#1a1a1a]">
+          <div className="flex items-center gap-2 lg:gap-4 px-4 h-full border-l border-[#1a1a1a]">
              <div className="flex items-center gap-2 text-[10px] font-bold text-[#4ade80]">
                 <div className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse"></div>
-                <span>CONNECTED</span>
+                <span className="hidden xs:inline">CONNECTED</span>
              </div>
-             <button className="text-[10px] font-bold hover:text-white opacity-40 uppercase tracking-widest">v1.2.4</button>
+             <button className="text-[10px] font-bold hover:text-white opacity-40 uppercase tracking-widest hidden xs:block">v1.2.4</button>
           </div>
         </div>
 
         {/* Editor Body */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
           
           {/* LEFT: Code Input Section */}
           <div className="flex-1 flex flex-col min-w-0 border-r border-[#1a1a1a]">
@@ -226,7 +248,7 @@ export default function Home() {
              {/* Textarea + Line numbers area */}
              <div className="flex-1 flex relative">
                 {/* Line Numbers */}
-                <div className="w-12 border-r border-[#1a1a1a] bg-[#0a0a0a] flex flex-col items-center pt-8 text-[11px] font-bold opacity-10 select-none">
+                <div className="hidden sm:flex w-12 border-r border-[#1a1a1a] bg-[#0a0a0a] flex-col items-center pt-8 text-[11px] font-bold opacity-10 select-none">
                    {[...Array(20)].map((_, i) => (
                      <div key={i} className="h-7 leading-7">{i + 1}</div>
                    ))}
@@ -237,32 +259,32 @@ export default function Home() {
                    <div className="flex-1 relative">
                       {activeTab === 'qa' ? (
                         <div className="h-full flex flex-col divide-y divide-[#1a1a1a]">
-                            <div className="p-8">
-                               <div className="text-[10px] text-[#c678dd] mb-3 font-bold uppercase tracking-wider">const context = `</div>
-                               <textarea 
-                                  className="w-full bg-transparent resize-none focus:outline-none text-[14px] text-white leading-relaxed placeholder:opacity-10 h-64"
-                                  placeholder="Paste documentation or long-form context here..."
-                                  value={context}
-                                  onChange={(e) => setContext(e.target.value)}
-                               />
-                               <div className="text-[10px] text-[#c678dd] mt-1 font-bold">`;</div>
-                            </div>
-                            <div className="p-8 flex-1">
-                               <div className="text-[10px] text-[#61afef] mb-3 font-bold uppercase tracking-wider">const query = (</div>
-                               <input 
-                                  className="w-full bg-transparent focus:outline-none text-[14px] text-white leading-relaxed placeholder:opacity-10"
-                                  placeholder="Ask any question about the data above..."
-                                  value={question}
-                                  onChange={(e) => setQuestion(e.target.value)}
+                             <div className="p-4 lg:p-8">
+                                <div className="text-[10px] text-[#c678dd] mb-3 font-bold uppercase tracking-wider">const context = `</div>
+                                <textarea 
+                                   className="w-full bg-transparent resize-none focus:outline-none text-[14px] text-white leading-relaxed placeholder:opacity-10 h-48 lg:h-64"
+                                   placeholder="Paste documentation or long-form context here..."
+                                   value={context}
+                                   onChange={(e) => setContext(e.target.value)}
                                 />
-                                <div className="text-[10px] text-[#61afef] mt-1 font-bold">);</div>
-                            </div>
+                                <div className="text-[10px] text-[#c678dd] mt-1 font-bold">`;</div>
+                             </div>
+                             <div className="p-4 lg:p-8 flex-1">
+                                <div className="text-[10px] text-[#61afef] mb-3 font-bold uppercase tracking-wider">const query = (</div>
+                                <input 
+                                   className="w-full bg-transparent focus:outline-none text-[14px] text-white leading-relaxed placeholder:opacity-10"
+                                   placeholder="Ask any question about the data above..."
+                                   value={question}
+                                   onChange={(e) => setQuestion(e.target.value)}
+                                 />
+                                 <div className="text-[10px] text-[#61afef] mt-1 font-bold">);</div>
+                             </div>
                         </div>
                       ) : (
-                        <div className="p-8 h-full flex flex-col">
+                        <div className="p-4 lg:p-8 h-full flex flex-col">
                            <div className="text-[10px] text-[#98c379] mb-3 font-bold uppercase tracking-wider">const inputData = `</div>
                            <textarea 
-                              className="flex-1 w-full bg-transparent resize-none focus:outline-none text-[14px] text-white leading-relaxed placeholder:opacity-10 font-mono"
+                              className="flex-1 w-full bg-transparent resize-none focus:outline-none text-[14px] text-white leading-relaxed placeholder:opacity-10 font-mono min-h-[200px]"
                               placeholder={`// Paste text for ${activeTab} analysis...`}
                               value={text}
                               onChange={(e) => setText(e.target.value)}
@@ -273,23 +295,23 @@ export default function Home() {
                    </div>
                    
                    {/* Bottom Action Bar */}
-                   <div className="p-8 border-t border-[#1a1a1a] bg-[#0d0d0d] flex items-center justify-between">
-                      <div className="flex items-center gap-6">
-                         <div className="flex flex-col">
-                            <span className="text-[8px] font-black tracking-widest opacity-30 uppercase mb-1">Status</span>
-                            <span className="text-[11px] text-[#4ade80] font-bold">AWAITING_TRIGGER</span>
-                         </div>
-                         <div className="flex flex-col">
-                            <span className="text-[8px] font-black tracking-widest opacity-30 uppercase mb-1">Model</span>
-                            <span className="text-[11px] text-white/50 font-bold uppercase tracking-tighter">HuggingFace_v4.2</span>
-                         </div>
-                      </div>
-                      
-                      <button 
-                         onClick={handleProcess}
-                         disabled={loading || (activeTab === 'qa' ? (!question || !context) : !text)}
-                         className="px-8 py-3 bg-[#4ade80] text-black text-[11px] font-black uppercase tracking-widest rounded transition-all hover:scale-105 active:scale-95 disabled:grayscale disabled:opacity-30 flex items-center gap-3 shadow-[0_0_20px_rgba(74,222,128,0.2)]"
-                      >
+                    <div className="p-4 lg:p-8 border-t border-[#1a1a1a] bg-[#0d0d0d] flex flex-col sm:flex-row items-center justify-between gap-4">
+                       <div className="flex items-center gap-6 self-start">
+                          <div className="flex flex-col">
+                             <span className="text-[8px] font-black tracking-widest opacity-30 uppercase mb-1">Status</span>
+                             <span className="text-[11px] text-[#4ade80] font-bold">AWAITING_TRIGGER</span>
+                          </div>
+                          <div className="flex flex-col">
+                             <span className="text-[8px] font-black tracking-widest opacity-30 uppercase mb-1">Model</span>
+                             <span className="text-[11px] text-white/50 font-bold uppercase tracking-tighter">HuggingFace_v4.2</span>
+                          </div>
+                       </div>
+                       
+                       <button 
+                          onClick={handleProcess}
+                          disabled={loading || (activeTab === 'qa' ? (!question || !context) : !text)}
+                          className="w-full sm:w-auto px-8 py-3 bg-[#4ade80] text-black text-[11px] font-black uppercase tracking-widest rounded transition-all hover:scale-105 active:scale-95 disabled:grayscale disabled:opacity-30 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(74,222,128,0.2)]"
+                       >
                          {loading ? <Loader2 size={14} className="animate-spin" /> : <><Sparkles size={14} /> Execute Trace</>}
                       </button>
                    </div>
@@ -298,12 +320,12 @@ export default function Home() {
           </div>
 
           {/* RIGHT: Reports / Inference Output */}
-          <div className="w-[450px] flex-shrink-0 flex flex-col bg-[#080808]">
+          <div className="w-full lg:w-[450px] flex-shrink-0 flex flex-col bg-[#080808] border-t lg:border-t-0 border-[#1a1a1a]">
              <div className="h-8 border-b border-[#1a1a1a] flex items-center px-4 bg-[#0d0d0d]">
                 <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-30">Module // Inference Report</span>
              </div>
 
-             <div className="flex-1 overflow-y-auto p-10 font-mono">
+             <div className="flex-1 lg:overflow-y-auto p-6 lg:p-10 font-mono">
                 {loading ? (
                    <div className="h-full flex flex-col items-center justify-center space-y-4">
                       <div className="w-12 h-1 block border-t-2 border-[#4ade80] animate-pulse"></div>
@@ -337,7 +359,7 @@ export default function Home() {
                       {activeTab === 'sentiment' && (
                          <div className="space-y-10">
                             <div className="text-center">
-                               <div className={`text-5xl font-black tracking-tighter uppercase ${result.label.toUpperCase() === 'POSITIVE' ? 'text-[#4ade80]' : 'text-[#e06c75]'}`}>
+                               <div className={`text-3xl md:text-5xl font-black tracking-tighter uppercase ${result.label.toUpperCase() === 'POSITIVE' ? 'text-[#4ade80]' : 'text-[#e06c75]'}`}>
                                   {result.label}
                                </div>
                                <div className="text-[9px] font-black tracking-widest opacity-30 mt-2 uppercase">Classification Map</div>
@@ -458,6 +480,14 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {/* Overlay for mobile sidebar */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
     </div>
   );
 }
